@@ -84,39 +84,6 @@ export async function generateVegaLiteSpec(
       values: allData
     },
     layer: [
-      // Background rectangles for accumulation/decumulation phases
-      {
-        mark: {
-          type: 'rect',
-          opacity: 0.1,
-          color: '#4CAF50'
-        },
-        encoding: {
-          x: {
-            field: 'age',
-            type: 'quantitative',
-            scale: { zero: false }
-          },
-          x2: {
-            datum: retirementAge
-          }
-        }
-      },
-      {
-        mark: {
-          type: 'rect',
-          opacity: 0.1,
-          color: '#FF9800'
-        },
-        encoding: {
-          x: {
-            datum: retirementAge
-          },
-          x2: {
-            datum: Math.max(...allData.map(d => d.age))
-          }
-        }
-      },
       // Vertical line at retirement age
       {
         mark: {
@@ -191,8 +158,8 @@ export async function generateVegaLiteSpec(
           dx: 5,
           dy: -10,
           fontSize: 12,
-          fontWeight: 'bold',
-          color: '#FF5722'
+          fontWeight: 'normal',
+          color: 'black'
         },
         encoding: {
           x: {
