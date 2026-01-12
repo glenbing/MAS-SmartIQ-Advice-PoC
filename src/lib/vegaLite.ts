@@ -4,7 +4,7 @@
  * Compiles Vega-Lite to full Vega specifications
  */
 
-import { ProjectionPoint, ProjectionResult } from '../types.js';
+import { ProjectionPoint } from '../types.js';
 
 // Cache for vega-lite module to avoid repeated dynamic imports
 let vegaLiteModule: any = null;
