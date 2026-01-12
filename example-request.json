@@ -61,5 +61,6 @@
   },
   "inflationRate": 0.02,
   "taxYear": 2024,
-  "numSimulations": 1000
+  "numSimulations": 1000,
+  "projectionMethod": "monteCarlo"
 }

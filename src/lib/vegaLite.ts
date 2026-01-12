@@ -7,18 +7,17 @@ import { ProjectionPoint, ProjectionResult } from '../types';
 
 /**
  * Generate Vega-Lite specification for combined chart showing:
- * - Net worth projection (median)
+ * - Net worth projection
  * - Individual asset performance (KiwiSaver, NZ Work Super, portfolios)
  * - Accumulation and decumulation phases
  * - Withdrawal sustainability indicators
  */
 export function generateVegaLiteSpec(
-  deterministicProjections: ProjectionPoint[],
-  monteCarloMedian: ProjectionPoint[],
+  projections: ProjectionPoint[],
   retirementAge: number
 ): any {
   // Prepare data for net worth projection
-  const netWorthData = monteCarloMedian.map(point => ({
+  const netWorthData = projections.map(point => ({
     age: point.age,
     year: point.year,
     value: point.netWorth,
@@ -31,7 +30,7 @@ export function generateVegaLiteSpec(
   // Prepare data for individual assets
   const assetData: any[] = [];
   
-  monteCarloMedian.forEach(point => {
+  projections.forEach(point => {
     Object.entries(point.assets).forEach(([assetName, value]) => {
       assetData.push({
         age: point.age,

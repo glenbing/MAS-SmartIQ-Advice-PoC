@@ -95,7 +95,8 @@ RESTful endpoint that accepts financial goals, assets, and liabilities, returnin
   },
   "inflationRate": 0.02,
   "taxYear": 2024,
-  "numSimulations": 1000
+  "numSimulations": 1000,
+  "projectionMethod": "monteCarlo"
 }
 ```
 
@@ -109,6 +110,12 @@ RESTful endpoint that accepts financial goals, assets, and liabilities, returnin
 #### Withdrawal Strategy Types
 - `swr`: Safe Withdrawal Rate (default 4% rule)
 - `swp`: Systematic Withdrawal Plan with fixed amount
+
+#### Projection Methods
+- `deterministic`: Single-path projection using expected returns (faster, linear growth)
+- `monteCarlo`: Probabilistic projection with 1000+ simulations (default, shows percentile outcomes)
+
+**Note:** The `projectionMethod` parameter controls which projection method is used for the Vega-Lite visualization. When set to `deterministic`, only deterministic projections are calculated and returned. When set to `monteCarlo` (default), Monte Carlo simulations are run and the median is used for visualization.
 
 #### Response
 
@@ -269,6 +276,35 @@ curl -X POST http://localhost:7071/api/nzFinancialProjections \
     }
   }'
 ```
+
+### Example 4: Deterministic Projection (Faster)
+
+```bash
+curl -X POST http://localhost:7071/api/nzFinancialProjections \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentAge": 40,
+    "goals": {
+      "retirementAge": 65,
+      "lifeExpectancy": 85
+    },
+    "assets": [
+      {
+        "name": "Investment Portfolio",
+        "type": "portfolio",
+        "currentValue": 200000,
+        "contributionAmount": 15000,
+        "contributionFrequency": "annual",
+        "expectedReturn": 0.07,
+        "volatility": 0.15
+      }
+    ],
+    "liabilities": [],
+    "projectionMethod": "deterministic"
+  }'
+```
+
+**Note:** Using `projectionMethod: "deterministic"` provides a single linear projection that's significantly faster than Monte Carlo simulations. Use this for quick estimates or when probabilistic outcomes aren't needed.
 
 ## NZ Tax Considerations
 

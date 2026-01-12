@@ -45,6 +45,7 @@ export interface ProjectionInput {
   liabilities: Liability[];
   inflationRate?: number;
   taxYear?: number; // For NZ tax calculations
+  projectionMethod?: 'deterministic' | 'monteCarlo'; // Which projection method to use for Vega visualization
 }
 
 export interface ProjectionPoint {
@@ -67,7 +68,7 @@ export interface MonteCarloResult {
 }
 
 export interface ProjectionResult {
-  deterministic: ProjectionPoint[];
+  deterministic: ProjectionPoint[] | null;
   monteCarlo: {
     median: ProjectionPoint[];
     p10: ProjectionPoint[];
@@ -75,7 +76,7 @@ export interface ProjectionResult {
     p75: ProjectionPoint[];
     p90: ProjectionPoint[];
     successRate?: number; // Percentage of simulations that didn't run out of money
-  };
+  } | null;
   vegaLiteSpec: any; // Vega-Lite JSON specification
 }
 

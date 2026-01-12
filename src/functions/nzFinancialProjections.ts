@@ -42,7 +42,8 @@ export async function nzFinancialProjections(
       assets: body.assets || [],
       liabilities: body.liabilities || [],
       inflationRate: body.inflationRate || 0.02,
-      taxYear: body.taxYear || 2024
+      taxYear: body.taxYear || 2024,
+      projectionMethod: body.projectionMethod || 'monteCarlo'
     };
     
     // Validate retirement age
@@ -51,6 +52,16 @@ export async function nzFinancialProjections(
         status: 400,
         jsonBody: {
           error: 'goals.retirementAge is required'
+        }
+      };
+    }
+    
+    // Validate projection method
+    if (input.projectionMethod && input.projectionMethod !== 'deterministic' && input.projectionMethod !== 'monteCarlo') {
+      return {
+        status: 400,
+        jsonBody: {
+          error: 'Invalid projectionMethod. Must be "deterministic" or "monteCarlo"'
         }
       };
     }
@@ -73,37 +84,50 @@ export async function nzFinancialProjections(
       };
     }
     
-    // Calculate projections
-    context.log('Calculating deterministic projection...');
-    const deterministicProjections = calculateDeterministicProjection(input, withdrawalStrategy);
+    // Calculate projections based on requested method
+    let deterministicProjections: any = null;
+    let monteCarloResults: any = null;
+    let vegaProjections: any = null;
     
-    context.log('Calculating Monte Carlo projections...');
-    const numSimulations = body.numSimulations || 1000;
-    const monteCarloResults = calculateMonteCarloProjection(input, withdrawalStrategy, numSimulations);
+    const projectionMethod = input.projectionMethod || 'monteCarlo';
     
-    // Generate Vega-Lite visualization
+    if (projectionMethod === 'deterministic') {
+      context.log('Calculating deterministic projection...');
+      deterministicProjections = calculateDeterministicProjection(input, withdrawalStrategy);
+      vegaProjections = deterministicProjections;
+    } else {
+      context.log('Calculating Monte Carlo projections...');
+      const numSimulations = body.numSimulations || 1000;
+      monteCarloResults = calculateMonteCarloProjection(input, withdrawalStrategy, numSimulations);
+      vegaProjections = monteCarloResults.median;
+    }
+    
+    // Generate Vega-Lite visualization using selected projection method
     context.log('Generating Vega-Lite specification...');
     const vegaLiteSpec = generateVegaLiteSpec(
-      deterministicProjections,
-      monteCarloResults.median,
+      vegaProjections,
       input.goals.retirementAge
     );
     
     // Build result
     const result: ProjectionResult = {
       deterministic: deterministicProjections,
-      monteCarlo: {
+      monteCarlo: monteCarloResults ? {
         median: monteCarloResults.median,
         p10: monteCarloResults.p10,
         p25: monteCarloResults.p25,
         p75: monteCarloResults.p75,
         p90: monteCarloResults.p90,
         successRate: monteCarloResults.successRate
-      },
+      } : null,
       vegaLiteSpec
     };
     
-    context.log(`Projection complete. Success rate: ${monteCarloResults.successRate.toFixed(1)}%`);
+    if (monteCarloResults) {
+      context.log(`Projection complete. Success rate: ${monteCarloResults.successRate.toFixed(1)}%`);
+    } else {
+      context.log('Deterministic projection complete.');
+    }
     
     return {
       status: 200,
