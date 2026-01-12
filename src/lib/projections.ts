@@ -31,6 +31,9 @@ export function calculateDeterministicProjection(
   let currentAssets = new Map<string, number>();
   let currentLiabilities = new Map<string, number>();
   
+  // Track initial retirement portfolio value for SWR calculation
+  let retirementPortfolioValue: number | null = null;
+  
   assets.forEach(asset => currentAssets.set(asset.name, asset.currentValue));
   liabilities.forEach(liability => currentLiabilities.set(liability.name, liability.currentBalance));
   
@@ -99,20 +102,22 @@ export function calculateDeterministicProjection(
     // Calculate withdrawal if retired
     let withdrawalAmount = 0;
     if (isRetired && withdrawalStrategy) {
+      // Store initial retirement portfolio value on first retirement year
+      if (retirementPortfolioValue === null) {
+        retirementPortfolioValue = totalAssetValue;
+      }
+      
       if (withdrawalStrategy.type === 'swr') {
         const rate = withdrawalStrategy.rate || 0.04;
-        const initialPortfolioValue = totalAssetValue;
+        const yearsRetired = age - retirementAge;
         
-        if (year === retirementAge - currentAge) {
-          withdrawalAmount = initialPortfolioValue * rate;
-        } else if (year > retirementAge - currentAge) {
-          // Inflation-adjusted or fixed
-          const yearsRetired = age - retirementAge;
-          const baseWithdrawal = totalAssetValue * rate;
-          withdrawalAmount = withdrawalStrategy.inflationAdjusted 
-            ? baseWithdrawal * Math.pow(1 + inflationRate, yearsRetired)
-            : baseWithdrawal;
-        }
+        // Calculate initial withdrawal based on retirement portfolio value
+        const initialWithdrawal = retirementPortfolioValue * rate;
+        
+        // Adjust for inflation if enabled
+        withdrawalAmount = withdrawalStrategy.inflationAdjusted 
+          ? initialWithdrawal * Math.pow(1 + inflationRate, yearsRetired)
+          : initialWithdrawal;
       } else if (withdrawalStrategy.type === 'swp' && withdrawalStrategy.fixedAmount) {
         const yearsRetired = age - retirementAge;
         withdrawalAmount = withdrawalStrategy.inflationAdjusted

@@ -79,6 +79,14 @@ export async function nzFinancialProjections(
         fixedAmount: body.withdrawalStrategy.fixedAmount,
         inflationAdjusted: body.withdrawalStrategy.inflationAdjusted !== false
       };
+    } else if (input.goals.desiredAnnualIncome) {
+      // If desiredAnnualIncome is provided but no explicit withdrawal strategy,
+      // use it as a fixed withdrawal amount (SWP strategy)
+      withdrawalStrategy = {
+        type: 'swp',
+        fixedAmount: input.goals.desiredAnnualIncome,
+        inflationAdjusted: true
+      };
     } else {
       // Default to 4% rule (SWR)
       withdrawalStrategy = {
