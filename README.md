@@ -144,7 +144,7 @@ RESTful endpoint that accepts financial goals, assets, and liabilities, returnin
     "successRate": 87.5
   },
   "vegaLiteSpec": {
-    "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+    "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
     "title": "NZ Financial Projections - Net Worth and Asset Performance",
     "data": { /* chart data */ }
   }
