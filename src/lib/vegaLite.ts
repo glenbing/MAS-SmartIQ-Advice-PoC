@@ -51,7 +51,7 @@ export function generateVegaLiteSpec(
   
   // Create Vega-Lite specification
   const spec = {
-    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    $schema: 'https://vega.github.io/schema/vega-lite/v6.json',
     title: {
       text: 'NZ Financial Projections - Net Worth and Asset Performance',
       subtitle: 'Showing accumulation and decumulation phases'
@@ -234,7 +234,7 @@ export function generateWithdrawalSustainabilitySpec(
     }));
   
   return {
-    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    $schema: 'https://vega.github.io/schema/vega-lite/v6.json',
     title: 'Withdrawal Sustainability Over Retirement Horizon',
     width: 600,
     height: 300,
