@@ -4,10 +4,15 @@
 
 /**
  * Box-Muller transform to generate normally distributed random numbers
+ * Protects against Math.log(0) by ensuring u1 and u2 are in valid range
  */
 function boxMullerTransform(): number {
-  const u1 = Math.random();
-  const u2 = Math.random();
+  let u1 = 0;
+  let u2 = 0;
+  
+  // Ensure u1 and u2 are not 0 or 1 to avoid Math.log(0) or Math.log(1)
+  while (u1 === 0) u1 = Math.random();
+  while (u2 === 0) u2 = Math.random();
   
   const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
   return z0;

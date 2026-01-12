@@ -24,7 +24,7 @@ export function calculateNZTax(income: number, taxYear: number = 2024): number {
   let tax = 0;
   
   for (const bracket of brackets) {
-    if (income <= bracket.min) break;
+    if (income < bracket.min) break;
     
     const taxableInThisBracket = Math.min(income, bracket.max) - bracket.min;
     tax += taxableInThisBracket * bracket.rate;
