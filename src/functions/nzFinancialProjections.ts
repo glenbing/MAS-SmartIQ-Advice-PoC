@@ -1,7 +1,11 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { ProjectionInput, ProjectionResult, WithdrawalStrategy } from '../types';
+import { ProjectionInput, ProjectionResult, WithdrawalStrategy, ProjectionPoint } from '../types';
 import { calculateDeterministicProjection, calculateMonteCarloProjection } from '../lib/projections';
 import { generateVegaLiteSpec } from '../lib/vegaLite';
+
+// Valid projection methods
+const VALID_PROJECTION_METHODS = ['deterministic', 'monteCarlo'] as const;
+type ProjectionMethod = typeof VALID_PROJECTION_METHODS[number];
 
 /**
  * Azure Function: NZ Financial Projections
@@ -57,11 +61,11 @@ export async function nzFinancialProjections(
     }
     
     // Validate projection method
-    if (input.projectionMethod && input.projectionMethod !== 'deterministic' && input.projectionMethod !== 'monteCarlo') {
+    if (input.projectionMethod && !VALID_PROJECTION_METHODS.includes(input.projectionMethod as ProjectionMethod)) {
       return {
         status: 400,
         jsonBody: {
-          error: 'Invalid projectionMethod. Must be "deterministic" or "monteCarlo"'
+          error: `Invalid projectionMethod. Must be one of: ${VALID_PROJECTION_METHODS.join(', ')}`
         }
       };
     }
@@ -85,9 +89,9 @@ export async function nzFinancialProjections(
     }
     
     // Calculate projections based on requested method
-    let deterministicProjections: any = null;
-    let monteCarloResults: any = null;
-    let vegaProjections: any = null;
+    let deterministicProjections: ProjectionPoint[] | null = null;
+    let monteCarloResults: { median: ProjectionPoint[]; p10: ProjectionPoint[]; p25: ProjectionPoint[]; p75: ProjectionPoint[]; p90: ProjectionPoint[]; successRate: number } | null = null;
+    let vegaProjections: ProjectionPoint[];
     
     const projectionMethod = input.projectionMethod || 'monteCarlo';
     

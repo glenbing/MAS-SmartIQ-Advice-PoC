@@ -11,6 +11,10 @@ import { ProjectionPoint, ProjectionResult } from '../types';
  * - Individual asset performance (KiwiSaver, NZ Work Super, portfolios)
  * - Accumulation and decumulation phases
  * - Withdrawal sustainability indicators
+ * 
+ * @param projections - Array of projection points from either deterministic or Monte Carlo median calculations
+ * @param retirementAge - Age at which retirement begins (for phase visualization)
+ * @returns Vega-Lite specification object
  */
 export function generateVegaLiteSpec(
   projections: ProjectionPoint[],
