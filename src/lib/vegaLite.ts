@@ -74,7 +74,7 @@ export async function generateVegaLiteSpec(
       subtitle: 'Showing accumulation and decumulation phases'
     },
     width: 800,
-    height: 500,
+    height: 450,
     data: {
       values: allData
     },

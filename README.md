@@ -119,57 +119,60 @@ RESTful endpoint that accepts financial goals, assets, and liabilities, returnin
 
 #### Response
 
+The API returns a Vega v6 specification directly:
+
 ```json
 {
-  "deterministic": [
+  "$schema": "https://vega.github.io/schema/vega/v6.json",
+  "description": "Financial projections showing net worth and asset performance over time, including accumulation and decumulation phases for retirement planning.",
+  "width": 800,
+  "height": 450,
+  "data": [
     {
-      "age": 35,
-      "year": 2024,
-      "netWorth": 150000,
-      "assets": {
-        "KiwiSaver": 50000,
-        "Investment Portfolio": 100000
-      },
-      "liabilities": {
-        "Mortgage": 400000
-      }
+      "name": "source_0",
+      "values": [
+        {
+          "age": 35,
+          "year": 2024,
+          "value": 150000,
+          "category": "Net Worth",
+          "phase": "Accumulation",
+          "withdrawalAmount": 0,
+          "sustainabilityRatio": null
+        }
+        /* ... more data points */
+      ]
+    },
+    {
+      "name": "source_1",
+      "values": [ /* asset-specific data */ ]
     }
+    /* ... more data sources */
   ],
-  "monteCarlo": {
-    "median": [ /* projection points */ ],
-    "p10": [ /* projection points */ ],
-    "p25": [ /* projection points */ ],
-    "p75": [ /* projection points */ ],
-    "p90": [ /* projection points */ ],
-    "successRate": 87.5
-  },
-  "vegaLiteSpec": {
-    "$schema": "https://vega.github.io/schema/vega/v6.json",
-    "description": "Financial projections showing net worth and asset performance...",
-    "width": 800,
-    "height": 500,
-    "data": [
-      {
-        "name": "source_0",
-        "values": [ /* projection data points */ ]
-      }
-    ],
-    "marks": [ /* 5 mark groups */ ],
-    "scales": [ /* x, y, color scales */ ],
-    "axes": [ /* x and y axes */ ],
-    "legends": [ /* color legend */ ]
+  "marks": [
+    /* 5 mark groups for visualization layers */
+  ],
+  "scales": [
+    /* x, y, and color scales */
+  ],
+  "axes": [
+    /* x and y axes configuration */
+  ],
+  "legends": [
+    /* color legend for assets */
+  ],
+  "config": {
+    /* visualization configuration */
   }
 }
 ```
 
-**Response Structure Notes**:
-- `deterministic`: Array of projection points (or `null` if Monte Carlo method used)
-- `monteCarlo`: Object with percentile projections and success rate (or `null` if deterministic method used)
-- `vegaLiteSpec`: **Compiled Vega v6 specification** (not Vega-Lite) - a complete, standalone visualization
-  - Schema: Vega v6 (`https://vega.github.io/schema/vega/v6.json`)
-  - Contains all required properties at root level
-  - Ready to use with Vega renderers
-  - See [VEGA-V6-COMPLIANCE.md](./VEGA-V6-COMPLIANCE.md) for validation details
+**Response Structure**:
+- Returns a complete, standalone **Vega v6 specification**
+- All required properties at root level: `$schema`, `description`, `width`, `height`
+- Ready to use directly with Vega renderers and editors
+- No wrapper objects - pure Vega visualization spec
+- See [VEGA-V6-COMPLIANCE.md](./VEGA-V6-COMPLIANCE.md) for validation details
 
 ## Installation
 
@@ -342,12 +345,12 @@ Portfolio Investment Entity (PIE) tax rates for KiwiSaver:
 
 ## Visualization
 
-The API returns a compiled **Vega v6 specification** (not Vega-Lite) in the `vegaLiteSpec` property. This is a complete, standalone Vega visualization that complies with the Vega v6 schema.
+The API returns a compiled **Vega v6 specification** directly as the response body. This is a complete, standalone Vega visualization that complies with the Vega v6 schema.
 
 **Vega v6 Compliance**: See [VEGA-V6-COMPLIANCE.md](./VEGA-V6-COMPLIANCE.md) for detailed validation report.
 
 The Vega specification can be rendered using:
-- [Vega Editor](https://vega.github.io/editor/) (paste the `vegaLiteSpec` directly)
+- [Vega Editor](https://vega.github.io/editor/) (paste the API response directly)
 - JavaScript libraries: `vega`, `vega-embed`
 - Python: `altair` (can load Vega specs)
 - R: `vegawidget`
@@ -363,18 +366,18 @@ Example rendering in HTML:
 <body>
   <div id="vis"></div>
   <script>
-    // Extract vegaLiteSpec from API response
-    const spec = response.vegaLiteSpec; // This is a Vega v6 spec
+    // API response is a Vega v6 spec
+    const spec = apiResponse; // Direct Vega v6 specification
     vegaEmbed('#vis', spec);
   </script>
 </body>
 </html>
 ```
 
-**Note**: The `vegaLiteSpec` property contains a compiled Vega v6 specification with all required properties:
+**Note**: The API response is a complete Vega v6 specification with all required properties:
 - `$schema`: "https://vega.github.io/schema/vega/v6.json"
 - `description`: Chart description
-- `width`: 800, `height`: 500
+- `width`: 800, `height`: 450
 - `data`: Array with `values` property
 - `marks`, `scales`, `axes`, `legends`: Complete visualization definition
 

@@ -1,5 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { ProjectionInput, ProjectionResult, WithdrawalStrategy, ProjectionPoint, MonteCarloProjectionResult } from '../types.js';
+import { ProjectionInput, WithdrawalStrategy, ProjectionPoint, MonteCarloProjectionResult } from '../types.js';
 import { calculateDeterministicProjection, calculateMonteCarloProjection } from '../lib/projections.js';
 import { generateVegaLiteSpec } from '../lib/vegaLite.js';
 
@@ -108,17 +108,10 @@ export async function nzFinancialProjections(
     
     // Generate Vega visualization using selected projection method
     context.log('Generating Vega specification...');
-    const vegaLiteSpec = await generateVegaLiteSpec(
+    const vegaSpec = await generateVegaLiteSpec(
       vegaProjections,
       input.goals.retirementAge
     );
-    
-    // Build result
-    const result: ProjectionResult = {
-      deterministic: deterministicProjections,
-      monteCarlo: monteCarloResults,
-      vegaLiteSpec
-    };
     
     if (monteCarloResults) {
       context.log(`Projection complete. Success rate: ${monteCarloResults.successRate.toFixed(1)}%`);
@@ -126,12 +119,13 @@ export async function nzFinancialProjections(
       context.log('Deterministic projection complete.');
     }
     
+    // Return the Vega spec directly as the API response
     return {
       status: 200,
       headers: {
         'Content-Type': 'application/json'
       },
-      jsonBody: result
+      jsonBody: vegaSpec
     };
     
   } catch (error: any) {

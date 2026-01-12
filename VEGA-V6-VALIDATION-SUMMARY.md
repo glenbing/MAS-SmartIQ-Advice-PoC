@@ -13,24 +13,31 @@ The problem statement described several issues that needed to be addressed:
 - **Status**: ✅ Already present (added by vega-lite compiler)
 - **Verification**: Test 5 confirms schema URL is correct
 
-### 2. Incorrect Root Structure ✅ NO ISSUE FOUND
+### 2. Incorrect Root Structure ✅ FIXED
 - **Described Issue**: Vega spec wrapped in `monteCarlo` object with `deterministic: null`
-- **Actual Structure**: Vega spec is correctly in separate `vegaLiteSpec` property
+- **Updated Structure**: Vega spec is now returned directly as the API response
 - **API Response**:
   ```json
   {
-    "deterministic": ProjectionPoint[] | null,
-    "monteCarlo": MonteCarloProjectionResult | null,
-    "vegaLiteSpec": <Vega v6 Spec>  // Correctly separated
+    "$schema": "https://vega.github.io/schema/vega/v6.json",
+    "description": "Financial projections showing net worth and asset performance over time, including accumulation and decumulation phases for retirement planning.",
+    "width": 800,
+    "height": 450,
+    "data": [...],
+    "marks": [...],
+    "scales": [...],
+    "axes": [...],
+    "legends": [...],
+    "config": {...}
   }
   ```
-- **Status**: ✅ No wrapper issue exists
+- **Status**: ✅ API now returns Vega spec directly at root level
 
 ### 3. Missing Top-Level `width` and `height` ✅ ALREADY FIXED
 - **Required**: Add explicit top-level width and height properties
-- **Status**: ✅ Already present (800x500)
+- **Status**: ✅ Already present (800x450)
 - **Location**: Vega-Lite spec compiled to Vega format with top-level dimensions
-- **Verification**: Sample output shows `"width": 800, "height": 500` at root level
+- **Verification**: Sample output shows `"width": 800, "height": 450` at root level
 
 ### 4. Data Using `values` Property ✅ ALREADY FIXED
 - **Required**: Data sources should use explicit `values` arrays
@@ -53,28 +60,37 @@ The problem statement described several issues that needed to be addressed:
 
 ## Actions Taken
 
-Since all requirements were already met, the following documentation and clarification actions were taken:
+Based on user feedback, the API response structure was updated to return the Vega spec directly:
 
-### 1. Added VEGA-V6-COMPLIANCE.md
+### 1. Updated API Response Structure
+- Changed `src/functions/nzFinancialProjections.ts` to return Vega spec directly
+- Removed wrapper object (ProjectionResult)
+- API now returns pure Vega v6 specification at root level
+
+### 2. Updated Height
+- Changed height from 500 to 450 pixels
+- Updated in `src/lib/vegaLite.ts` line 77
+
+### 3. Added VEGA-V6-COMPLIANCE.md
 - Comprehensive validation report
 - Documents all required properties
 - Explains API response structure
 - Provides verification methods
 - Clarifies the compilation process
 
-### 2. Fixed test.js
+### 4. Fixed test.js
 - Removed incorrect async function call
 - Added clarifying comments
 - File is not in official test suite, but fixed to avoid confusion
 
-### 3. Updated README.md
-- Clarified that API returns Vega v6 specs (not Vega-Lite)
+### 5. Updated README.md
+- Clarified that API returns Vega v6 specs directly (not wrapped)
 - Updated response structure example
 - Added notes about required properties
 - Referenced compliance documentation
 - Updated HTML rendering example
 
-### 4. Verified All Tests Pass
+### 6. Verified All Tests Pass
 - 13/13 tests passing ✅
 - 7 Vega validation tests
 - 6 Projection method tests
@@ -87,7 +103,7 @@ Since all requirements were already met, the following documentation and clarifi
 The application uses the following process:
 
 1. **Create Vega-Lite Spec** (`src/lib/vegaLite.ts` lines 70-229)
-   - Defines width: 800, height: 500
+   - Defines width: 800, height: 450
    - Includes all data with values
    - Creates multi-layer visualization
 
@@ -110,37 +126,45 @@ The application uses the following process:
 The compiled output includes:
 - `$schema`: Vega v6 URL (added by compiler)
 - `description`: Added manually
-- `width`, `height`: Compiled from Vega-Lite
+- `width`, `height`: Compiled from Vega-Lite (800x450)
 - `data`: With proper `values` arrays
 - `marks`, `scales`, `axes`, `legends`: Complete visualization
 
-### Why No Wrapper Object Exists
+### API Response Structure
 
-The API response structure is defined in `src/types.ts`:
+The API now returns the Vega specification directly without any wrapper:
 
+**Function**: `nzFinancialProjections.ts`
 ```typescript
-export interface ProjectionResult {
-  deterministic: ProjectionPoint[] | null;
-  monteCarlo: MonteCarloProjectionResult | null;
-  vegaLiteSpec: any; // Vega v6 specification
-}
+// Generate Vega spec
+const vegaSpec = await generateVegaLiteSpec(vegaProjections, input.goals.retirementAge);
+
+// Return Vega spec directly
+return {
+  status: 200,
+  headers: { 'Content-Type': 'application/json' },
+  jsonBody: vegaSpec  // Direct Vega v6 spec
+};
 ```
 
 This ensures:
-- Projection data (`deterministic`, `monteCarlo`) is separate from visualization
-- Vega spec is in its own property at root level
-- No nesting or wrapping of the Vega spec itself
+- The API returns a pure Vega v6 specification
+- No wrapper objects or additional structure
+- Response can be used directly with Vega renderers
 
 ## Conclusion
 
 ✅ **All Vega v6 requirements are met**
 
-The problem statement appears to describe either:
-1. A validation report of what **should** be present (and is)
-2. Hypothetical issues to check for (none found)
-3. Requirements that were already addressed in previous work
+The API has been updated to return the Vega specification directly as requested:
+1. Returns Vega spec at root level (no wrapper)
+2. Height changed to 450 pixels
+3. All required properties present ($schema, description, width, height, data, marks, scales, axes, legends, config)
 
-**No functional code changes were needed.** All changes were documentation and clarification to ensure future developers understand the correct structure.
+**Functional code changes made:**
+- Updated API response to return Vega spec directly
+- Changed height from 500 to 450 pixels
+- Updated all documentation to reflect new structure
 
 ## Verification Commands
 
