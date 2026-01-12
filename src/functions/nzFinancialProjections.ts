@@ -7,6 +7,10 @@ import { generateVegaLiteSpec } from '../lib/vegaLite.js';
 const VALID_PROJECTION_METHODS = ['deterministic', 'monteCarlo'] as const;
 type ProjectionMethod = typeof VALID_PROJECTION_METHODS[number];
 
+// Valid response formats
+const VALID_RESPONSE_FORMATS = ['full', 'dataOnly'] as const;
+type ResponseFormat = typeof VALID_RESPONSE_FORMATS[number];
+
 /**
  * Azure Function: NZ Financial Projections
  * 
@@ -47,7 +51,8 @@ export async function nzFinancialProjections(
       liabilities: body.liabilities || [],
       inflationRate: body.inflationRate || 0.02,
       taxYear: body.taxYear || 2024,
-      projectionMethod: body.projectionMethod || 'monteCarlo'
+      projectionMethod: body.projectionMethod || 'monteCarlo',
+      responseFormat: body.responseFormat || 'full'
     };
     
     // Validate retirement age
@@ -66,6 +71,16 @@ export async function nzFinancialProjections(
         status: 400,
         jsonBody: {
           error: `Invalid projectionMethod. Must be one of: ${VALID_PROJECTION_METHODS.join(', ')}`
+        }
+      };
+    }
+    
+    // Validate response format
+    if (input.responseFormat && !VALID_RESPONSE_FORMATS.includes(input.responseFormat as ResponseFormat)) {
+      return {
+        status: 400,
+        jsonBody: {
+          error: `Invalid responseFormat. Must be one of: ${VALID_RESPONSE_FORMATS.join(', ')}`
         }
       };
     }
@@ -127,13 +142,29 @@ export async function nzFinancialProjections(
       context.log('Deterministic projection complete.');
     }
     
-    // Return the Vega spec directly as the API response
+    // Determine response format
+    const responseFormat = input.responseFormat || 'full';
+    let responseBody: any;
+    
+    if (responseFormat === 'dataOnly') {
+      // Return only the values array from the first data source
+      context.log('Returning data values only');
+      responseBody = vegaSpec.data && vegaSpec.data[0] && vegaSpec.data[0].values 
+        ? vegaSpec.data[0].values 
+        : [];
+    } else {
+      // Return full Vega spec (default behavior)
+      context.log('Returning full Vega specification');
+      responseBody = vegaSpec;
+    }
+    
+    // Return the response based on selected format
     return {
       status: 200,
       headers: {
         'Content-Type': 'application/json'
       },
-      jsonBody: vegaSpec
+      jsonBody: responseBody
     };
     
   } catch (error: any) {

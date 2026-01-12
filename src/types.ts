@@ -46,6 +46,7 @@ export interface ProjectionInput {
   inflationRate?: number;
   taxYear?: number; // For NZ tax calculations
   projectionMethod?: 'deterministic' | 'monteCarlo'; // Which projection method to use for Vega visualization
+  responseFormat?: 'full' | 'dataOnly'; // Format of API response: 'full' returns complete Vega spec, 'dataOnly' returns just the values array
 }
 
 export interface ProjectionPoint {
