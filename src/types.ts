@@ -67,16 +67,18 @@ export interface MonteCarloResult {
   projections: ProjectionPoint[];
 }
 
+export interface MonteCarloProjectionResult {
+  median: ProjectionPoint[];
+  p10: ProjectionPoint[];
+  p25: ProjectionPoint[];
+  p75: ProjectionPoint[];
+  p90: ProjectionPoint[];
+  successRate: number;
+}
+
 export interface ProjectionResult {
   deterministic: ProjectionPoint[] | null;
-  monteCarlo: {
-    median: ProjectionPoint[];
-    p10: ProjectionPoint[];
-    p25: ProjectionPoint[];
-    p75: ProjectionPoint[];
-    p90: ProjectionPoint[];
-    successRate?: number; // Percentage of simulations that didn't run out of money
-  } | null;
+  monteCarlo: MonteCarloProjectionResult | null;
   vegaLiteSpec: any; // Vega-Lite JSON specification
 }
 

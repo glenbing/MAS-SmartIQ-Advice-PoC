@@ -1,5 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { ProjectionInput, ProjectionResult, WithdrawalStrategy, ProjectionPoint } from '../types';
+import { ProjectionInput, ProjectionResult, WithdrawalStrategy, ProjectionPoint, MonteCarloProjectionResult } from '../types';
 import { calculateDeterministicProjection, calculateMonteCarloProjection } from '../lib/projections';
 import { generateVegaLiteSpec } from '../lib/vegaLite';
 
@@ -90,7 +90,7 @@ export async function nzFinancialProjections(
     
     // Calculate projections based on requested method
     let deterministicProjections: ProjectionPoint[] | null = null;
-    let monteCarloResults: { median: ProjectionPoint[]; p10: ProjectionPoint[]; p25: ProjectionPoint[]; p75: ProjectionPoint[]; p90: ProjectionPoint[]; successRate: number } | null = null;
+    let monteCarloResults: MonteCarloProjectionResult | null = null;
     let vegaProjections: ProjectionPoint[];
     
     const projectionMethod = input.projectionMethod || 'monteCarlo';
@@ -116,14 +116,7 @@ export async function nzFinancialProjections(
     // Build result
     const result: ProjectionResult = {
       deterministic: deterministicProjections,
-      monteCarlo: monteCarloResults ? {
-        median: monteCarloResults.median,
-        p10: monteCarloResults.p10,
-        p25: monteCarloResults.p25,
-        p75: monteCarloResults.p75,
-        p90: monteCarloResults.p90,
-        successRate: monteCarloResults.successRate
-      } : null,
+      monteCarlo: monteCarloResults,
       vegaLiteSpec
     };
     

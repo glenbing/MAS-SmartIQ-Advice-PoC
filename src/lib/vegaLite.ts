@@ -54,7 +54,7 @@ export function generateVegaLiteSpec(
     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
     title: {
       text: 'NZ Financial Projections - Net Worth and Asset Performance',
-      subtitle: 'Showing accumulation and decumulation phases with Monte Carlo median projections'
+      subtitle: 'Showing accumulation and decumulation phases'
     },
     width: 800,
     height: 500,
