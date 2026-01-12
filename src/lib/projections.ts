@@ -103,7 +103,11 @@ export function calculateDeterministicProjection(
     let withdrawalAmount = 0;
     if (isRetired && withdrawalStrategy) {
       // Store initial retirement portfolio value on first retirement year
-      // This value is captured AFTER growth but BEFORE withdrawals for the retirement year
+      // This value is captured AFTER growth but BEFORE withdrawals for the retirement year.
+      // This is the correct base value for SWR calculations:
+      // - It represents the portfolio value available at the start of retirement
+      // - It remains fixed for all subsequent years (not recalculated)
+      // - Inflation adjustments are applied to the withdrawal amount, not the base value
       if (retirementPortfolioValue === null) {
         retirementPortfolioValue = totalAssetValue;
       }
