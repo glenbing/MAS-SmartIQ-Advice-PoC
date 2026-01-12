@@ -35,6 +35,11 @@ export async function generateVegaLiteSpec(
   projections: ProjectionPoint[],
   retirementAge: number
 ): Promise<any> {
+  // Validate retirement age
+  if (typeof retirementAge !== 'number' || !isFinite(retirementAge)) {
+    throw new Error('Invalid retirement age provided');
+  }
+  
   // Get vega-lite module
   const vegaLite = await getVegaLite();
   // Prepare data for net worth projection
@@ -115,7 +120,10 @@ export async function generateVegaLiteSpec(
         },
         transform: [
           {
-            filter: `datum.age >= ${retirementAge}`
+            filter: {
+              field: 'age',
+              gte: retirementAge
+            }
           }
         ]
       },

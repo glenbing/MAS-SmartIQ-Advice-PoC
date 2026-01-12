@@ -112,13 +112,15 @@ export function calculateDeterministicProjection(
         const yearsRetired = age - retirementAge;
         
         // Calculate initial withdrawal based on retirement portfolio value
-        // At this point retirementPortfolioValue is guaranteed to be non-null
-        const initialWithdrawal = retirementPortfolioValue! * rate;
-        
-        // Adjust for inflation if enabled
-        withdrawalAmount = withdrawalStrategy.inflationAdjusted 
-          ? initialWithdrawal * Math.pow(1 + inflationRate, yearsRetired)
-          : initialWithdrawal;
+        // Defensive check: should always be non-null here, but check anyway for safety
+        if (retirementPortfolioValue !== null) {
+          const initialWithdrawal = retirementPortfolioValue * rate;
+          
+          // Adjust for inflation if enabled
+          withdrawalAmount = withdrawalStrategy.inflationAdjusted 
+            ? initialWithdrawal * Math.pow(1 + inflationRate, yearsRetired)
+            : initialWithdrawal;
+        }
       } else if (withdrawalStrategy.type === 'swp' && withdrawalStrategy.fixedAmount) {
         const yearsRetired = age - retirementAge;
         withdrawalAmount = withdrawalStrategy.inflationAdjusted
