@@ -10,9 +10,9 @@ import {
   Liability,
   WithdrawalStrategy,
   MonteCarloProjectionResult
-} from '../types';
-import { calculateAfterTaxIncome } from './nzTax';
-import { runMonteCarloSimulations } from './monteCarlo';
+} from '../types.js';
+import { calculateAfterTaxIncome } from './nzTax.js';
+import { runMonteCarloSimulations } from './monteCarlo.js';
 
 /**
  * Calculate deterministic projection

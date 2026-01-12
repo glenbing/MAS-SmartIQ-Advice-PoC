@@ -3,7 +3,7 @@
  * Based on NZ income tax brackets for 2024-2025
  */
 
-import { TaxBracket } from '../types';
+import { TaxBracket } from '../types.js';
 
 // NZ Tax brackets for 2024-2025 tax year
 const NZ_TAX_BRACKETS_2024: TaxBracket[] = [

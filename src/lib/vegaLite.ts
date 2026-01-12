@@ -1,12 +1,27 @@
 /**
- * Vega-Lite Chart Generator
+ * Vega Chart Generator
  * Creates visualization specifications for financial projections
+ * Compiles Vega-Lite to full Vega specifications
  */
 
-import { ProjectionPoint, ProjectionResult } from '../types';
+import { ProjectionPoint, ProjectionResult } from '../types.js';
+
+// Cache for vega-lite module to avoid repeated dynamic imports
+let vegaLiteModule: any = null;
 
 /**
- * Generate Vega-Lite specification for combined chart showing:
+ * Lazy loader for vega-lite module
+ */
+async function getVegaLite(): Promise<any> {
+  if (!vegaLiteModule) {
+    // @ts-ignore - vega-lite is an ESM module
+    vegaLiteModule = await import('vega-lite');
+  }
+  return vegaLiteModule;
+}
+
+/**
+ * Generate Vega specification for combined chart showing:
  * - Net worth projection
  * - Individual asset performance (KiwiSaver, NZ Work Super, portfolios)
  * - Accumulation and decumulation phases
@@ -14,12 +29,14 @@ import { ProjectionPoint, ProjectionResult } from '../types';
  * 
  * @param projections - Array of projection points from either deterministic or Monte Carlo median calculations
  * @param retirementAge - Age at which retirement begins (for phase visualization)
- * @returns Vega-Lite specification object
+ * @returns Vega specification object (compiled from Vega-Lite)
  */
-export function generateVegaLiteSpec(
+export async function generateVegaLiteSpec(
   projections: ProjectionPoint[],
   retirementAge: number
-): any {
+): Promise<any> {
+  // Get vega-lite module
+  const vegaLite = await getVegaLite();
   // Prepare data for net worth projection
   const netWorthData = projections.map(point => ({
     age: point.age,
@@ -211,16 +228,27 @@ export function generateVegaLiteSpec(
     }
   };
   
-  return spec;
+  // Compile Vega-Lite to Vega spec
+  const compiled = vegaLite.compile(spec);
+  const vegaSpec = compiled.spec;
+  
+  // Add description field as required for valid Vega spec
+  vegaSpec.description = 'Financial projections showing net worth and asset performance over time, including accumulation and decumulation phases for retirement planning.';
+  
+  return vegaSpec;
 }
 
 /**
  * Generate a simplified specification for withdrawal sustainability
+ * Returns a compiled Vega specification
  */
-export function generateWithdrawalSustainabilitySpec(
+export async function generateWithdrawalSustainabilitySpec(
   projections: ProjectionPoint[],
   retirementAge: number
-): any {
+): Promise<any> {
+  // Get vega-lite module
+  const vegaLite = await getVegaLite();
+  
   // Filter to retirement years only
   const retirementData = projections
     .filter(p => p.age >= retirementAge && p.sustainabilityRatio !== undefined)
@@ -233,7 +261,7 @@ export function generateWithdrawalSustainabilitySpec(
       withdrawalAmount: p.withdrawalAmount || 0
     }));
   
-  return {
+  const spec = {
     $schema: 'https://vega.github.io/schema/vega-lite/v6.json',
     title: 'Withdrawal Sustainability Over Retirement Horizon',
     width: 600,
@@ -296,4 +324,13 @@ export function generateWithdrawalSustainabilitySpec(
       }
     ]
   };
+  
+  // Compile Vega-Lite to Vega spec
+  const compiled = vegaLite.compile(spec);
+  const vegaSpec = compiled.spec;
+  
+  // Add description field as required for valid Vega spec
+  vegaSpec.description = 'Withdrawal sustainability chart showing the ratio of available funds to required withdrawals over retirement years.';
+  
+  return vegaSpec;
 }
