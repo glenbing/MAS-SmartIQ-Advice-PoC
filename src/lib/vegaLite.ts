@@ -83,7 +83,8 @@ export async function generateVegaLiteSpec(
       {
         mark: {
           type: 'rect',
-          opacity: 0.1
+          opacity: 0.1,
+          color: '#4CAF50'
         },
         encoding: {
           x: {
@@ -93,20 +94,14 @@ export async function generateVegaLiteSpec(
           },
           x2: {
             datum: retirementAge
-          },
-          color: {
-            datum: 'Accumulation',
-            scale: {
-              domain: ['Accumulation', 'Decumulation'],
-              range: ['#4CAF50', '#FF9800']
-            }
           }
         }
       },
       {
         mark: {
           type: 'rect',
-          opacity: 0.1
+          opacity: 0.1,
+          color: '#FF9800'
         },
         encoding: {
           x: {
@@ -116,9 +111,6 @@ export async function generateVegaLiteSpec(
           },
           x2: {
             datum: Math.max(...allData.map(d => d.age))
-          },
-          color: {
-            datum: 'Decumulation'
           }
         },
         transform: [
