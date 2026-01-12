@@ -103,6 +103,7 @@ export function calculateDeterministicProjection(
     let withdrawalAmount = 0;
     if (isRetired && withdrawalStrategy) {
       // Store initial retirement portfolio value on first retirement year
+      // This value is captured AFTER growth but BEFORE withdrawals for the retirement year
       if (retirementPortfolioValue === null) {
         retirementPortfolioValue = totalAssetValue;
       }

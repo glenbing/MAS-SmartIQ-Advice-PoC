@@ -110,22 +110,12 @@ export async function generateVegaLiteSpec(
         },
         encoding: {
           x: {
-            field: 'age',
-            type: 'quantitative',
-            scale: { zero: false }
+            datum: retirementAge
           },
           x2: {
             datum: Math.max(...allData.map(d => d.age))
           }
-        },
-        transform: [
-          {
-            filter: {
-              field: 'age',
-              gte: retirementAge
-            }
-          }
-        ]
+        }
       },
       // Vertical line at retirement age
       {
