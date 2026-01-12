@@ -37,7 +37,7 @@ export async function generateVegaLiteSpec(
 ): Promise<any> {
   // Validate retirement age
   if (typeof retirementAge !== 'number' || !isFinite(retirementAge)) {
-    throw new Error('Invalid retirement age provided');
+    throw new Error(`Invalid retirement age: ${retirementAge}. Retirement age must be a finite number.`);
   }
   
   // Get vega-lite module
