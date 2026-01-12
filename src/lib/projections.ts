@@ -112,7 +112,8 @@ export function calculateDeterministicProjection(
         const yearsRetired = age - retirementAge;
         
         // Calculate initial withdrawal based on retirement portfolio value
-        const initialWithdrawal = retirementPortfolioValue * rate;
+        // At this point retirementPortfolioValue is guaranteed to be non-null
+        const initialWithdrawal = retirementPortfolioValue! * rate;
         
         // Adjust for inflation if enabled
         withdrawalAmount = withdrawalStrategy.inflationAdjusted 
