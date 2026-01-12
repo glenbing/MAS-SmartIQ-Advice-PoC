@@ -8,7 +8,8 @@ import {
   ProjectionPoint, 
   Asset, 
   Liability,
-  WithdrawalStrategy 
+  WithdrawalStrategy,
+  MonteCarloProjectionResult
 } from '../types';
 import { calculateAfterTaxIncome } from './nzTax';
 import { runMonteCarloSimulations } from './monteCarlo';
@@ -176,14 +177,7 @@ export function calculateMonteCarloProjection(
   input: ProjectionInput,
   withdrawalStrategy?: WithdrawalStrategy,
   numSimulations: number = 1000
-): {
-  median: ProjectionPoint[];
-  p10: ProjectionPoint[];
-  p25: ProjectionPoint[];
-  p75: ProjectionPoint[];
-  p90: ProjectionPoint[];
-  successRate: number;
-} {
+): MonteCarloProjectionResult {
   const { currentAge, goals, assets, liabilities, inflationRate = 0.02 } = input;
   const { retirementAge, lifeExpectancy } = goals;
   const yearsToProject = lifeExpectancy - currentAge;

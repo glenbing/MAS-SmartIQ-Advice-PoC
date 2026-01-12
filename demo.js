@@ -30,36 +30,68 @@ exampleRequest.liabilities.forEach(liability => {
 console.log(`  Withdrawal Strategy: ${exampleRequest.withdrawalStrategy.type.toUpperCase()} (${exampleRequest.withdrawalStrategy.rate * 100}% rate)`);
 console.log(`  Simulations: ${exampleRequest.numSimulations}\n`);
 
-// Build projection input
-const input = {
+// Test both projection methods
+console.log('=== Testing Projection Methods ===\n');
+
+// Test 1: Monte Carlo projection (default)
+console.log('Test 1: Monte Carlo Projection Method');
+const input1 = {
   currentAge: exampleRequest.currentAge,
   goals: exampleRequest.goals,
   assets: exampleRequest.assets,
   liabilities: exampleRequest.liabilities,
   inflationRate: exampleRequest.inflationRate,
-  taxYear: exampleRequest.taxYear
+  taxYear: exampleRequest.taxYear,
+  projectionMethod: 'monteCarlo'
 };
 
 const withdrawalStrategy = exampleRequest.withdrawalStrategy;
 
-console.log('Calculating projections...\n');
-
-// Calculate projections
-const startTime = Date.now();
-const deterministicProjections = calculateDeterministicProjection(input, withdrawalStrategy);
-const monteCarloResults = calculateMonteCarloProjection(input, withdrawalStrategy, exampleRequest.numSimulations);
-const vegaLiteSpec = generateVegaLiteSpec(
-  deterministicProjections,
+const startTime1 = Date.now();
+const monteCarloResults = calculateMonteCarloProjection(input1, withdrawalStrategy, exampleRequest.numSimulations);
+const vegaLiteSpecMC = generateVegaLiteSpec(
   monteCarloResults.median,
-  input.goals.retirementAge
+  input1.goals.retirementAge
 );
-const totalTime = Date.now() - startTime;
+const time1 = Date.now() - startTime1;
 
-console.log(`✓ Calculations completed in ${totalTime}ms\n`);
+console.log(`  ✓ Completed in ${time1}ms`);
+console.log(`  Success Rate: ${monteCarloResults.successRate.toFixed(1)}%`);
+console.log(`  Vega data points: ${vegaLiteSpecMC.data.values.length}\n`);
 
-// Build API response
+// Test 2: Deterministic projection
+console.log('Test 2: Deterministic Projection Method');
+const input2 = {
+  currentAge: exampleRequest.currentAge,
+  goals: exampleRequest.goals,
+  assets: exampleRequest.assets,
+  liabilities: exampleRequest.liabilities,
+  inflationRate: exampleRequest.inflationRate,
+  taxYear: exampleRequest.taxYear,
+  projectionMethod: 'deterministic'
+};
+
+const startTime2 = Date.now();
+const deterministicProjections = calculateDeterministicProjection(input2, withdrawalStrategy);
+const vegaLiteSpecDet = generateVegaLiteSpec(
+  deterministicProjections,
+  input2.goals.retirementAge
+);
+const time2 = Date.now() - startTime2;
+
+console.log(`  ✓ Completed in ${time2}ms`);
+console.log(`  Vega data points: ${vegaLiteSpecDet.data.values.length}\n`);
+
+console.log('Performance comparison:');
+console.log(`  Monte Carlo: ${time1}ms (includes ${exampleRequest.numSimulations} simulations)`);
+console.log(`  Deterministic: ${time2}ms (single projection)`);
+console.log(`  Speedup: ${(time1/time2).toFixed(1)}x faster with deterministic\n`);
+
+console.log('=== Using Monte Carlo Results for Demo ===\n');
+
+// Build API response (using Monte Carlo for demo)
 const apiResponse = {
-  deterministic: deterministicProjections,
+  deterministic: null,
   monteCarlo: {
     median: monteCarloResults.median,
     p10: monteCarloResults.p10,
@@ -68,7 +100,7 @@ const apiResponse = {
     p90: monteCarloResults.p90,
     successRate: monteCarloResults.successRate
   },
-  vegaLiteSpec
+  vegaLiteSpec: vegaLiteSpecMC
 };
 
 // Display summary
@@ -82,8 +114,8 @@ startPoint.assets && Object.entries(startPoint.assets).forEach(([name, value]) =
 });
 console.log(`  Net Worth: $${startPoint.netWorth.toLocaleString(undefined, { maximumFractionDigits: 0 })}\n`);
 
-console.log(`At Retirement (Age ${input.goals.retirementAge}):`);
-const retirementIndex = input.goals.retirementAge - input.currentAge;
+console.log(`At Retirement (Age ${input1.goals.retirementAge}):`);
+const retirementIndex = input1.goals.retirementAge - input1.currentAge;
 const retirementPoint = monteCarloResults.median[retirementIndex];
 console.log(`  Total Assets: $${Object.values(retirementPoint.assets).reduce((a, b) => a + b, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`);
 retirementPoint.assets && Object.entries(retirementPoint.assets).forEach(([name, value]) => {
@@ -92,7 +124,7 @@ retirementPoint.assets && Object.entries(retirementPoint.assets).forEach(([name,
 console.log(`  Net Worth: $${retirementPoint.netWorth.toLocaleString(undefined, { maximumFractionDigits: 0 })}`);
 console.log(`  Annual Withdrawal: $${(retirementPoint.withdrawalAmount || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}\n`);
 
-console.log(`At Life Expectancy (Age ${input.goals.lifeExpectancy}):`);
+console.log(`At Life Expectancy (Age ${input1.goals.lifeExpectancy}):`);
 const endPoint = monteCarloResults.median[monteCarloResults.median.length - 1];
 console.log(`  Net Worth (Median): $${endPoint.netWorth.toLocaleString(undefined, { maximumFractionDigits: 0 })}`);
 console.log(`  Net Worth (P10): $${monteCarloResults.p10[monteCarloResults.p10.length - 1].netWorth.toLocaleString(undefined, { maximumFractionDigits: 0 })}`);
@@ -114,8 +146,8 @@ console.log(`Response size: ${(JSON.stringify(apiResponse).length / 1024).toFixe
 // Display Vega-Lite information
 console.log('Vega-Lite Visualization:');
 console.log(`  Chart type: Multi-layer line chart`);
-console.log(`  Data points: ${vegaLiteSpec.data.values.length}`);
-console.log(`  Layers: ${vegaLiteSpec.layer.length}`);
+console.log(`  Data points: ${vegaLiteSpecMC.data.values.length}`);
+console.log(`  Layers: ${vegaLiteSpecMC.layer.length}`);
 console.log(`  - Background phase rectangles`);
 console.log(`  - Retirement age marker`);
 console.log(`  - Asset performance lines`);
