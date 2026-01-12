@@ -1,7 +1,7 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { ProjectionInput, ProjectionResult, WithdrawalStrategy, ProjectionPoint, MonteCarloProjectionResult } from '../types';
-import { calculateDeterministicProjection, calculateMonteCarloProjection } from '../lib/projections';
-import { generateVegaLiteSpec } from '../lib/vegaLite';
+import { ProjectionInput, ProjectionResult, WithdrawalStrategy, ProjectionPoint, MonteCarloProjectionResult } from '../types.js';
+import { calculateDeterministicProjection, calculateMonteCarloProjection } from '../lib/projections.js';
+import { generateVegaLiteSpec } from '../lib/vegaLite.js';
 
 // Valid projection methods
 const VALID_PROJECTION_METHODS = ['deterministic', 'monteCarlo'] as const;
@@ -106,9 +106,9 @@ export async function nzFinancialProjections(
       vegaProjections = monteCarloResults.median;
     }
     
-    // Generate Vega-Lite visualization using selected projection method
-    context.log('Generating Vega-Lite specification...');
-    const vegaLiteSpec = generateVegaLiteSpec(
+    // Generate Vega visualization using selected projection method
+    context.log('Generating Vega specification...');
+    const vegaLiteSpec = await generateVegaLiteSpec(
       vegaProjections,
       input.goals.retirementAge
     );

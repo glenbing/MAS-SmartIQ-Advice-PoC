@@ -2,16 +2,19 @@
   "name": "mas-smartiq-advice-poc",
   "version": "1.0.0",
   "description": "Azure Function for NZ financial projections with deterministic and Monte Carlo methods",
+  "type": "module",
   "main": "dist/src/functions/*.js",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
     "prestart": "npm run build",
     "start": "func start",
-    "test": "npm run build && node dist/src/test/vegaValidation.test.js && node test-projection-method.js"
+    "test": "npm run build && node dist/src/test/vegaValidation.test.js && node test-projection-method.mjs"
   },
   "dependencies": {
-    "@azure/functions": "^4.0.0"
+    "@azure/functions": "^4.0.0",
+    "vega": "^6.2.0",
+    "vega-lite": "^6.4.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

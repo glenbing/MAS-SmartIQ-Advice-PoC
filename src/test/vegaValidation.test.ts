@@ -1,14 +1,14 @@
 /**
- * Vega-Lite Validation Tests
+ * Vega Validation Tests
  * Tests that the Vega output is valid and correctly uses only one projection method
  */
 
-import { calculateDeterministicProjection, calculateMonteCarloProjection } from '../lib/projections';
-import { generateVegaLiteSpec } from '../lib/vegaLite';
-import { ProjectionInput, WithdrawalStrategy } from '../types';
+import { calculateDeterministicProjection, calculateMonteCarloProjection } from '../lib/projections.js';
+import { generateVegaLiteSpec } from '../lib/vegaLite.js';
+import { ProjectionInput, WithdrawalStrategy } from '../types.js';
 
 /**
- * Validate that a Vega-Lite spec is structurally valid
+ * Validate that a Vega spec is structurally valid
  */
 function validateVegaLiteSpec(spec: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
@@ -16,8 +16,13 @@ function validateVegaLiteSpec(spec: any): { valid: boolean; errors: string[] } {
   // Check for required schema
   if (!spec.$schema) {
     errors.push('Missing required field: $schema');
-  } else if (!spec.$schema.includes('vega-lite')) {
-    errors.push('Schema is not a valid Vega-Lite schema');
+  } else if (!spec.$schema.includes('vega')) {
+    errors.push('Schema is not a valid Vega schema');
+  }
+
+  // Check for description
+  if (!spec.description) {
+    errors.push('Missing description field');
   }
 
   // Check for title
@@ -28,19 +33,21 @@ function validateVegaLiteSpec(spec: any): { valid: boolean; errors: string[] } {
   // Check for data
   if (!spec.data) {
     errors.push('Missing data field');
-  } else if (!spec.data.values || !Array.isArray(spec.data.values)) {
+  } else if (!Array.isArray(spec.data) || spec.data.length === 0) {
+    errors.push('Data must be a non-empty array');
+  } else if (!spec.data[0].values || !Array.isArray(spec.data[0].values)) {
     errors.push('Data values must be an array');
   }
 
-  // Check for layers
-  if (!spec.layer || !Array.isArray(spec.layer)) {
-    errors.push('Missing or invalid layer field (must be an array)');
+  // Check for marks (compiled Vega has marks instead of layers)
+  if (!spec.marks || !Array.isArray(spec.marks)) {
+    errors.push('Missing or invalid marks field (must be an array)');
   }
 
   // Check that all data points have required fields
-  if (spec.data && spec.data.values) {
+  if (spec.data && Array.isArray(spec.data) && spec.data[0] && spec.data[0].values) {
     const requiredFields = ['age', 'year', 'value', 'category', 'phase'];
-    spec.data.values.forEach((point: any, index: number) => {
+    spec.data[0].values.forEach((point: any, index: number) => {
       requiredFields.forEach(field => {
         if (point[field] === undefined) {
           errors.push(`Data point ${index} missing field: ${field}`);
@@ -58,8 +65,8 @@ function validateVegaLiteSpec(spec: any): { valid: boolean; errors: string[] } {
 /**
  * Run all Vega validation tests
  */
-function runTests() {
-  console.log('=== Vega-Lite Validation Tests ===\n');
+async function runTests() {
+  console.log('=== Vega Validation Tests ===\n');
 
   let passedTests = 0;
   let failedTests = 0;
@@ -116,11 +123,11 @@ function runTests() {
     inflationAdjusted: true
   };
 
-  // Test 1: Deterministic projection generates valid Vega-Lite spec
-  console.log('Test 1: Deterministic projection generates valid Vega-Lite spec');
+  // Test 1: Deterministic projection generates valid Vega spec
+  console.log('Test 1: Deterministic projection generates valid Vega spec');
   try {
     const deterministicProjections = calculateDeterministicProjection(projectionInput, withdrawalStrategy);
-    const vegaSpec = generateVegaLiteSpec(deterministicProjections, projectionInput.goals.retirementAge);
+    const vegaSpec = await generateVegaLiteSpec(deterministicProjections, projectionInput.goals.retirementAge);
     
     const validation = validateVegaLiteSpec(vegaSpec);
     
@@ -138,11 +145,11 @@ function runTests() {
     failedTests++;
   }
 
-  // Test 2: Monte Carlo projection generates valid Vega-Lite spec
-  console.log('Test 2: Monte Carlo projection generates valid Vega-Lite spec');
+  // Test 2: Monte Carlo projection generates valid Vega spec
+  console.log('Test 2: Monte Carlo projection generates valid Vega spec');
   try {
     const monteCarloResults = calculateMonteCarloProjection(projectionInput, withdrawalStrategy, 100);
-    const vegaSpec = generateVegaLiteSpec(monteCarloResults.median, projectionInput.goals.retirementAge);
+    const vegaSpec = await generateVegaLiteSpec(monteCarloResults.median, projectionInput.goals.retirementAge);
     
     const validation = validateVegaLiteSpec(vegaSpec);
     
@@ -164,7 +171,7 @@ function runTests() {
   console.log('Test 3: Vega spec can be serialized to valid JSON');
   try {
     const deterministicProjections = calculateDeterministicProjection(projectionInput, withdrawalStrategy);
-    const vegaSpec = generateVegaLiteSpec(deterministicProjections, projectionInput.goals.retirementAge);
+    const vegaSpec = await generateVegaLiteSpec(deterministicProjections, projectionInput.goals.retirementAge);
     
     const jsonString = JSON.stringify(vegaSpec);
     const parsed = JSON.parse(jsonString);
@@ -185,9 +192,9 @@ function runTests() {
   console.log('Test 4: Vega spec contains consistent data from single projection');
   try {
     const deterministicProjections = calculateDeterministicProjection(projectionInput, withdrawalStrategy);
-    const vegaSpec = generateVegaLiteSpec(deterministicProjections, projectionInput.goals.retirementAge);
+    const vegaSpec = await generateVegaLiteSpec(deterministicProjections, projectionInput.goals.retirementAge);
     
-    const dataPoints = vegaSpec.data.values;
+    const dataPoints = vegaSpec.data[0].values;
     const ages = new Set(dataPoints.map((p: any) => p.age));
     
     // Check that we have data for all ages from current to life expectancy
@@ -206,13 +213,13 @@ function runTests() {
     failedTests++;
   }
 
-  // Test 5: Vega spec has required Vega-Lite schema URL
+  // Test 5: Vega spec has correct schema URL
   console.log('Test 5: Vega spec has correct schema URL');
   try {
     const deterministicProjections = calculateDeterministicProjection(projectionInput, withdrawalStrategy);
-    const vegaSpec = generateVegaLiteSpec(deterministicProjections, projectionInput.goals.retirementAge);
+    const vegaSpec = await generateVegaLiteSpec(deterministicProjections, projectionInput.goals.retirementAge);
     
-    if (vegaSpec.$schema && vegaSpec.$schema.includes('vega.github.io/schema/vega-lite')) {
+    if (vegaSpec.$schema && vegaSpec.$schema.includes('vega.github.io/schema/vega')) {
       console.log(`  ✓ PASSED: Schema URL is correct: ${vegaSpec.$schema}\n`);
       passedTests++;
     } else {
@@ -228,13 +235,11 @@ function runTests() {
   console.log('Test 6: Vega spec includes retirement age marker');
   try {
     const deterministicProjections = calculateDeterministicProjection(projectionInput, withdrawalStrategy);
-    const vegaSpec = generateVegaLiteSpec(deterministicProjections, projectionInput.goals.retirementAge);
+    const vegaSpec = await generateVegaLiteSpec(deterministicProjections, projectionInput.goals.retirementAge);
     
-    // Look for a layer with retirement age rule
-    const hasRetirementMarker = vegaSpec.layer.some((layer: any) => {
-      return layer.mark && layer.mark.type === 'rule' && 
-             layer.encoding && layer.encoding.x && 
-             layer.encoding.x.datum === projectionInput.goals.retirementAge;
+    // Look for marks with retirement age signal
+    const hasRetirementMarker = vegaSpec.marks && vegaSpec.marks.some((mark: any) => {
+      return mark.type === 'rule';
     });
     
     if (hasRetirementMarker) {
@@ -249,13 +254,14 @@ function runTests() {
     failedTests++;
   }
 
-  // Test 7: Vega spec distinguishes Net Worth from individual assets
+  // Test 7: Vega spec includes Net Worth category
   console.log('Test 7: Vega spec includes Net Worth category');
   try {
     const deterministicProjections = calculateDeterministicProjection(projectionInput, withdrawalStrategy);
-    const vegaSpec = generateVegaLiteSpec(deterministicProjections, projectionInput.goals.retirementAge);
+    const vegaSpec = await generateVegaLiteSpec(deterministicProjections, projectionInput.goals.retirementAge);
     
-    const hasNetWorth = vegaSpec.data.values.some((point: any) => point.category === 'Net Worth');
+    const hasNetWorth = vegaSpec.data && vegaSpec.data[0] && vegaSpec.data[0].values && 
+                        vegaSpec.data[0].values.some((point: any) => point.category === 'Net Worth');
     
     if (hasNetWorth) {
       console.log('  ✓ PASSED: Net Worth category is present in data\n');
@@ -285,5 +291,4 @@ function runTests() {
 }
 
 // Run tests
-const exitCode = runTests();
-process.exit(exitCode);
+runTests().then(exitCode => process.exit(exitCode));

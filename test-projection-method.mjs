@@ -3,81 +3,82 @@
  * Tests the full API behavior with both deterministic and Monte Carlo methods
  */
 
-const { calculateDeterministicProjection, calculateMonteCarloProjection } = require('./dist/src/lib/projections');
-const { generateVegaLiteSpec } = require('./dist/src/lib/vegaLite');
+import { calculateDeterministicProjection, calculateMonteCarloProjection } from './dist/src/lib/projections.js';
+import { generateVegaLiteSpec } from './dist/src/lib/vegaLite.js';
 
-console.log('=== Projection Method Parameter Tests ===\n');
+async function runTests() {
+  console.log('=== Projection Method Parameter Tests ===\n');
 
-let passedTests = 0;
-let failedTests = 0;
+  let passedTests = 0;
+  let failedTests = 0;
 
-// Test data
-const testInput = {
-  currentAge: 35,
-  goals: {
-    name: 'Test Retirement',
-    targetAge: 35,
-    retirementAge: 65,
-    lifeExpectancy: 90,
-    desiredAnnualIncome: 60000,
-    inflationRate: 0.02
-  },
-  assets: [
-    {
-      name: 'KiwiSaver',
-      type: 'kiwisaver',
-      currentValue: 75000,
-      contributionAmount: 5000,
-      contributionFrequency: 'annual',
-      expectedReturn: 0.06,
-      volatility: 0.12,
-      employerContribution: 5000,
-      governmentContribution: 521.43
+  // Test data
+  const testInput = {
+    currentAge: 35,
+    goals: {
+      name: 'Test Retirement',
+      targetAge: 35,
+      retirementAge: 65,
+      lifeExpectancy: 90,
+      desiredAnnualIncome: 60000,
+      inflationRate: 0.02
+    },
+    assets: [
+      {
+        name: 'KiwiSaver',
+        type: 'kiwisaver',
+        currentValue: 75000,
+        contributionAmount: 5000,
+        contributionFrequency: 'annual',
+        expectedReturn: 0.06,
+        volatility: 0.12,
+        employerContribution: 5000,
+        governmentContribution: 521.43
+      }
+    ],
+    liabilities: [],
+    inflationRate: 0.02,
+    taxYear: 2024
+  };
+
+  const withdrawalStrategy = {
+    type: 'swr',
+    rate: 0.04,
+    inflationAdjusted: true
+  };
+
+  // Test 1: Deterministic method produces valid Vega spec
+  console.log('Test 1: Deterministic projection method');
+  try {
+    const input = { ...testInput, projectionMethod: 'deterministic' };
+    const projections = calculateDeterministicProjection(input, withdrawalStrategy);
+    const vegaSpec = await generateVegaLiteSpec(projections, input.goals.retirementAge);
+    
+    if (vegaSpec && vegaSpec.$schema && vegaSpec.data && vegaSpec.data.length > 0) {
+      console.log('  ✓ PASSED: Deterministic method works correctly');
+      console.log(`    - Generated Vega spec with ${vegaSpec.data.length} data sources\n`);
+      passedTests++;
+    } else {
+      console.log('  ✗ FAILED: Invalid Vega spec structure\n');
+      failedTests++;
     }
-  ],
-  liabilities: [],
-  inflationRate: 0.02,
-  taxYear: 2024
-};
-
-const withdrawalStrategy = {
-  type: 'swr',
-  rate: 0.04,
-  inflationAdjusted: true
-};
-
-// Test 1: Deterministic method produces valid Vega spec
-console.log('Test 1: Deterministic projection method');
-try {
-  const input = { ...testInput, projectionMethod: 'deterministic' };
-  const projections = calculateDeterministicProjection(input, withdrawalStrategy);
-  const vegaSpec = generateVegaLiteSpec(projections, input.goals.retirementAge);
-  
-  if (vegaSpec && vegaSpec.$schema && vegaSpec.data && vegaSpec.data.values.length > 0) {
-    console.log('  ✓ PASSED: Deterministic method works correctly');
-    console.log(`    - Generated ${vegaSpec.data.values.length} data points\n`);
-    passedTests++;
-  } else {
-    console.log('  ✗ FAILED: Invalid Vega spec structure\n');
+  } catch (error) {
+    console.log(`  ✗ FAILED: ${error.message}\n`);
     failedTests++;
   }
-} catch (error) {
-  console.log(`  ✗ FAILED: ${error.message}\n`);
-  failedTests++;
-}
 
-// Test 2: Monte Carlo method produces valid Vega spec
-console.log('Test 2: Monte Carlo projection method');
-try {
-  const input = { ...testInput, projectionMethod: 'monteCarlo' };
-  const monteCarloResults = calculateMonteCarloProjection(input, withdrawalStrategy, 100);
-  const vegaSpec = generateVegaLiteSpec(monteCarloResults.median, input.goals.retirementAge);
-  
-  if (vegaSpec && vegaSpec.$schema && vegaSpec.data && vegaSpec.data.values.length > 0 && monteCarloResults.successRate !== undefined) {
-    console.log('  ✓ PASSED: Monte Carlo method works correctly');
-    console.log(`    - Generated ${vegaSpec.data.values.length} data points`);
-    console.log(`    - Success rate: ${monteCarloResults.successRate.toFixed(1)}%\n`);
-    passedTests++;
+  // Test 2: Monte Carlo method produces valid Vega spec
+  console.log('Test 2: Monte Carlo projection method');
+  try {
+    const input = { ...testInput, projectionMethod: 'monteCarlo' };
+    const monteCarloResults = calculateMonteCarloProjection(input, withdrawalStrategy, 100);
+    const vegaSpec = await generateVegaLiteSpec(monteCarloResults.median, input.goals.retirementAge);
+    
+    if (vegaSpec && vegaSpec.$schema && vegaSpec.data && vegaSpec.data.length > 0 && monteCarloResults.successRate !== undefined) {
+      console.log('  ✓ PASSED: Monte Carlo method works correctly');
+      console.log(`    - Generated Vega spec with ${vegaSpec.data.length} data sources`);
+      console.log(`    - Success rate: ${monteCarloResults.successRate.toFixed(1)}%\n`);
+      passedTests++;
   } else {
     console.log('  ✗ FAILED: Invalid Vega spec or missing success rate\n');
     failedTests++;
@@ -111,16 +112,16 @@ try {
   const detProjections = calculateDeterministicProjection(testInput, withdrawalStrategy);
   const mcResults = calculateMonteCarloProjection(testInput, withdrawalStrategy, 100);
   
-  const vegaSpecDet = generateVegaLiteSpec(detProjections, testInput.goals.retirementAge);
-  const vegaSpecMC = generateVegaLiteSpec(mcResults.median, testInput.goals.retirementAge);
+  const vegaSpecDet = await generateVegaLiteSpec(detProjections, testInput.goals.retirementAge);
+  const vegaSpecMC = await generateVegaLiteSpec(mcResults.median, testInput.goals.retirementAge);
   
   // Check they have the same structure
   const detKeys = Object.keys(vegaSpecDet).sort();
   const mcKeys = Object.keys(vegaSpecMC).sort();
   const sameKeys = JSON.stringify(detKeys) === JSON.stringify(mcKeys);
   
-  const detLayers = vegaSpecDet.layer.length;
-  const mcLayers = vegaSpecMC.layer.length;
+  const detLayers = vegaSpecDet.marks.length;
+  const mcLayers = vegaSpecMC.marks.length;
   const sameLayers = detLayers === mcLayers;
   
   if (sameKeys && sameLayers) {
@@ -169,10 +170,10 @@ try {
 console.log('Test 6: Vega spec data source isolation');
 try {
   const detProjections = calculateDeterministicProjection(testInput, withdrawalStrategy);
-  const vegaSpecDet = generateVegaLiteSpec(detProjections, testInput.goals.retirementAge);
+  const vegaSpecDet = await generateVegaLiteSpec(detProjections, testInput.goals.retirementAge);
   
   // Check that all net worth values match the deterministic projection
-  const vegaNetWorthPoints = vegaSpecDet.data.values
+  const vegaNetWorthPoints = vegaSpecDet.data[0].values
     .filter(p => p.category === 'Net Worth')
     .sort((a, b) => a.age - b.age);
   
@@ -199,16 +200,20 @@ try {
   failedTests++;
 }
 
-// Summary
-console.log('=== Test Summary ===');
-console.log(`Total tests: ${passedTests + failedTests}`);
-console.log(`Passed: ${passedTests}`);
-console.log(`Failed: ${failedTests}`);
+  // Summary
+  console.log('=== Test Summary ===');
+  console.log(`Total tests: ${passedTests + failedTests}`);
+  console.log(`Passed: ${passedTests}`);
+  console.log(`Failed: ${failedTests}`);
 
-if (failedTests === 0) {
-  console.log('\n✓ All projection method tests passed!\n');
-  process.exit(0);
-} else {
-  console.log('\n✗ Some tests failed\n');
-  process.exit(1);
+  if (failedTests === 0) {
+    console.log('\n✓ All projection method tests passed!\n');
+    return 0;
+  } else {
+    console.log('\n✗ Some tests failed\n');
+    return 1;
+  }
 }
+
+// Run tests
+runTests().then(exitCode => process.exit(exitCode));
