@@ -4,7 +4,7 @@
  * Compiles Vega-Lite to full Vega specifications
  */
 
-import { ProjectionPoint, ProjectionResult } from '../types.js';
+import { ProjectionPoint } from '../types.js';
 
 // Cache for vega-lite module to avoid repeated dynamic imports
 let vegaLiteModule: any = null;
@@ -74,7 +74,7 @@ export async function generateVegaLiteSpec(
       subtitle: 'Showing accumulation and decumulation phases'
     },
     width: 800,
-    height: 500,
+    height: 450,
     data: {
       values: allData
     },
