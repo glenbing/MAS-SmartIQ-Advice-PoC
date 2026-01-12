@@ -35,6 +35,11 @@ export async function generateVegaLiteSpec(
   projections: ProjectionPoint[],
   retirementAge: number
 ): Promise<any> {
+  // Validate retirement age
+  if (typeof retirementAge !== 'number' || !isFinite(retirementAge) || retirementAge < 0) {
+    throw new Error(`Invalid retirement age: ${retirementAge}. Retirement age must be a non-negative finite number.`);
+  }
+  
   // Get vega-lite module
   const vegaLite = await getVegaLite();
   // Prepare data for net worth projection
@@ -83,7 +88,8 @@ export async function generateVegaLiteSpec(
       {
         mark: {
           type: 'rect',
-          opacity: 0.1
+          opacity: 0.1,
+          color: '#4CAF50'
         },
         encoding: {
           x: {
@@ -93,39 +99,23 @@ export async function generateVegaLiteSpec(
           },
           x2: {
             datum: retirementAge
-          },
-          color: {
-            datum: 'Accumulation',
-            scale: {
-              domain: ['Accumulation', 'Decumulation'],
-              range: ['#4CAF50', '#FF9800']
-            }
           }
         }
       },
       {
         mark: {
           type: 'rect',
-          opacity: 0.1
+          opacity: 0.1,
+          color: '#FF9800'
         },
         encoding: {
           x: {
-            field: 'age',
-            type: 'quantitative',
-            scale: { zero: false }
+            datum: retirementAge
           },
           x2: {
             datum: Math.max(...allData.map(d => d.age))
-          },
-          color: {
-            datum: 'Decumulation'
           }
-        },
-        transform: [
-          {
-            filter: `datum.age >= ${retirementAge}`
-          }
-        ]
+        }
       },
       // Vertical line at retirement age
       {

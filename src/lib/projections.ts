@@ -31,6 +31,9 @@ export function calculateDeterministicProjection(
   let currentAssets = new Map<string, number>();
   let currentLiabilities = new Map<string, number>();
   
+  // Track initial retirement portfolio value for SWR calculation
+  let retirementPortfolioValue: number | null = null;
+  
   assets.forEach(asset => currentAssets.set(asset.name, asset.currentValue));
   liabilities.forEach(liability => currentLiabilities.set(liability.name, liability.currentBalance));
   
@@ -99,19 +102,29 @@ export function calculateDeterministicProjection(
     // Calculate withdrawal if retired
     let withdrawalAmount = 0;
     if (isRetired && withdrawalStrategy) {
+      // Store initial retirement portfolio value on first retirement year
+      // This value is captured AFTER growth but BEFORE withdrawals for the retirement year.
+      // This is the correct base value for SWR calculations:
+      // - It represents the portfolio value available at the start of retirement
+      // - It remains fixed for all subsequent years (not recalculated)
+      // - Inflation adjustments are applied to the withdrawal amount, not the base value
+      if (retirementPortfolioValue === null) {
+        retirementPortfolioValue = totalAssetValue;
+      }
+      
       if (withdrawalStrategy.type === 'swr') {
         const rate = withdrawalStrategy.rate || 0.04;
-        const initialPortfolioValue = totalAssetValue;
+        const yearsRetired = age - retirementAge;
         
-        if (year === retirementAge - currentAge) {
-          withdrawalAmount = initialPortfolioValue * rate;
-        } else if (year > retirementAge - currentAge) {
-          // Inflation-adjusted or fixed
-          const yearsRetired = age - retirementAge;
-          const baseWithdrawal = totalAssetValue * rate;
+        // Calculate initial withdrawal based on retirement portfolio value
+        // Defensive check: should always be non-null here, but check anyway for safety
+        if (retirementPortfolioValue !== null) {
+          const initialWithdrawal = retirementPortfolioValue * rate;
+          
+          // Adjust for inflation if enabled
           withdrawalAmount = withdrawalStrategy.inflationAdjusted 
-            ? baseWithdrawal * Math.pow(1 + inflationRate, yearsRetired)
-            : baseWithdrawal;
+            ? initialWithdrawal * Math.pow(1 + inflationRate, yearsRetired)
+            : initialWithdrawal;
         }
       } else if (withdrawalStrategy.type === 'swp' && withdrawalStrategy.fixedAmount) {
         const yearsRetired = age - retirementAge;
