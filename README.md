@@ -144,12 +144,32 @@ RESTful endpoint that accepts financial goals, assets, and liabilities, returnin
     "successRate": 87.5
   },
   "vegaLiteSpec": {
-    "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
-    "title": "NZ Financial Projections - Net Worth and Asset Performance",
-    "data": { /* chart data */ }
+    "$schema": "https://vega.github.io/schema/vega/v6.json",
+    "description": "Financial projections showing net worth and asset performance...",
+    "width": 800,
+    "height": 500,
+    "data": [
+      {
+        "name": "source_0",
+        "values": [ /* projection data points */ ]
+      }
+    ],
+    "marks": [ /* 5 mark groups */ ],
+    "scales": [ /* x, y, color scales */ ],
+    "axes": [ /* x and y axes */ ],
+    "legends": [ /* color legend */ ]
   }
 }
 ```
+
+**Response Structure Notes**:
+- `deterministic`: Array of projection points (or `null` if Monte Carlo method used)
+- `monteCarlo`: Object with percentile projections and success rate (or `null` if deterministic method used)
+- `vegaLiteSpec`: **Compiled Vega v6 specification** (not Vega-Lite) - a complete, standalone visualization
+  - Schema: Vega v6 (`https://vega.github.io/schema/vega/v6.json`)
+  - Contains all required properties at root level
+  - Ready to use with Vega renderers
+  - See [VEGA-V6-COMPLIANCE.md](./VEGA-V6-COMPLIANCE.md) for validation details
 
 ## Installation
 
@@ -322,10 +342,14 @@ Portfolio Investment Entity (PIE) tax rates for KiwiSaver:
 
 ## Visualization
 
-The Vega-Lite specification returned can be rendered using:
-- [Vega Editor](https://vega.github.io/editor/)
-- JavaScript libraries: `vega-lite`, `vega-embed`
-- Python: `altair`
+The API returns a compiled **Vega v6 specification** (not Vega-Lite) in the `vegaLiteSpec` property. This is a complete, standalone Vega visualization that complies with the Vega v6 schema.
+
+**Vega v6 Compliance**: See [VEGA-V6-COMPLIANCE.md](./VEGA-V6-COMPLIANCE.md) for detailed validation report.
+
+The Vega specification can be rendered using:
+- [Vega Editor](https://vega.github.io/editor/) (paste the `vegaLiteSpec` directly)
+- JavaScript libraries: `vega`, `vega-embed`
+- Python: `altair` (can load Vega specs)
 - R: `vegawidget`
 
 Example rendering in HTML:
@@ -334,18 +358,25 @@ Example rendering in HTML:
 <html>
 <head>
   <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
 </head>
 <body>
   <div id="vis"></div>
   <script>
-    const spec = /* paste vegaLiteSpec from API response */;
+    // Extract vegaLiteSpec from API response
+    const spec = response.vegaLiteSpec; // This is a Vega v6 spec
     vegaEmbed('#vis', spec);
   </script>
 </body>
 </html>
 ```
+
+**Note**: The `vegaLiteSpec` property contains a compiled Vega v6 specification with all required properties:
+- `$schema`: "https://vega.github.io/schema/vega/v6.json"
+- `description`: Chart description
+- `width`: 800, `height`: 500
+- `data`: Array with `values` property
+- `marks`, `scales`, `axes`, `legends`: Complete visualization definition
 
 ## Deployment
 
