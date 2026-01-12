@@ -1,0 +1,65 @@
+{
+  "currentAge": 35,
+  "goals": {
+    "name": "Comfortable Retirement",
+    "retirementAge": 65,
+    "lifeExpectancy": 90,
+    "desiredAnnualIncome": 60000,
+    "inflationRate": 0.02
+  },
+  "assets": [
+    {
+      "name": "KiwiSaver - Balanced Fund",
+      "type": "kiwisaver",
+      "currentValue": 75000,
+      "contributionAmount": 5000,
+      "contributionFrequency": "annual",
+      "expectedReturn": 0.06,
+      "volatility": 0.12,
+      "employerContribution": 5000,
+      "governmentContribution": 521.43
+    },
+    {
+      "name": "Investment Portfolio",
+      "type": "portfolio",
+      "currentValue": 150000,
+      "contributionAmount": 12000,
+      "contributionFrequency": "annual",
+      "expectedReturn": 0.07,
+      "volatility": 0.15
+    },
+    {
+      "name": "Investment Property",
+      "type": "property",
+      "currentValue": 600000,
+      "expectedReturn": 0.04,
+      "volatility": 0.08
+    }
+  ],
+  "liabilities": [
+    {
+      "name": "Home Mortgage",
+      "type": "mortgage",
+      "currentBalance": 400000,
+      "interestRate": 0.065,
+      "monthlyPayment": 2600,
+      "remainingMonths": 240
+    },
+    {
+      "name": "Investment Property Mortgage",
+      "type": "mortgage",
+      "currentBalance": 350000,
+      "interestRate": 0.07,
+      "monthlyPayment": 2200,
+      "remainingMonths": 300
+    }
+  ],
+  "withdrawalStrategy": {
+    "type": "swr",
+    "rate": 0.04,
+    "inflationAdjusted": true
+  },
+  "inflationRate": 0.02,
+  "taxYear": 2024,
+  "numSimulations": 1000
+}
