@@ -329,6 +329,135 @@ curl -X POST http://localhost:7071/api/nzFinancialProjections \
 
 **Note:** Using `projectionMethod: "deterministic"` provides a single linear projection that's significantly faster than Monte Carlo simulations. Use this for quick estimates or when probabilistic outcomes aren't needed.
 
+### Example 5: SWR vs SWP Comparison
+
+**SWR (Safe Withdrawal Rate)** withdraws a fixed percentage of initial portfolio value (e.g., 4% rule), while **SWP (Systematic Withdrawal Plan)** withdraws a fixed dollar amount.
+
+```bash
+# SWR: Withdraws 4% of initial $1M portfolio ($40,000/year)
+curl -X POST http://localhost:7071/api/nzFinancialProjections \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentAge": 65,
+    "goals": {
+      "retirementAge": 65,
+      "lifeExpectancy": 90
+    },
+    "assets": [
+      {
+        "name": "Retirement Portfolio",
+        "type": "portfolio",
+        "currentValue": 1000000,
+        "expectedReturn": 0.06,
+        "volatility": 0.12
+      }
+    ],
+    "liabilities": [],
+    "withdrawalStrategy": {
+      "type": "swr",
+      "rate": 0.04,
+      "inflationAdjusted": true
+    },
+    "projectionMethod": "monteCarlo"
+  }'
+
+# SWP: Withdraws fixed $50,000/year regardless of portfolio value
+curl -X POST http://localhost:7071/api/nzFinancialProjections \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentAge": 65,
+    "goals": {
+      "retirementAge": 65,
+      "lifeExpectancy": 90
+    },
+    "assets": [
+      {
+        "name": "Retirement Portfolio",
+        "type": "portfolio",
+        "currentValue": 1000000,
+        "expectedReturn": 0.06,
+        "volatility": 0.12
+      }
+    ],
+    "liabilities": [],
+    "withdrawalStrategy": {
+      "type": "swp",
+      "fixedAmount": 50000,
+      "inflationAdjusted": true
+    },
+    "projectionMethod": "monteCarlo"
+  }'
+```
+
+**Key Difference**: SWR is more conservative and adapts to portfolio performance, while SWP provides consistent income but may deplete portfolio faster if returns underperform.
+
+### Example 6: Monte Carlo vs Deterministic Comparison
+
+**Monte Carlo** runs 1000+ simulations to show probabilistic outcomes and success rates, while **Deterministic** provides a single linear projection based on expected returns.
+
+```bash
+# Monte Carlo: Shows range of outcomes with success rate
+curl -X POST http://localhost:7071/api/nzFinancialProjections \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentAge": 40,
+    "goals": {
+      "retirementAge": 65,
+      "lifeExpectancy": 85
+    },
+    "assets": [
+      {
+        "name": "Investment Portfolio",
+        "type": "portfolio",
+        "currentValue": 200000,
+        "contributionAmount": 15000,
+        "contributionFrequency": "annual",
+        "expectedReturn": 0.07,
+        "volatility": 0.15
+      }
+    ],
+    "liabilities": [],
+    "withdrawalStrategy": {
+      "type": "swr",
+      "rate": 0.04,
+      "inflationAdjusted": true
+    },
+    "projectionMethod": "monteCarlo",
+    "numSimulations": 1000
+  }'
+
+# Deterministic: Single linear projection
+curl -X POST http://localhost:7071/api/nzFinancialProjections \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentAge": 40,
+    "goals": {
+      "retirementAge": 65,
+      "lifeExpectancy": 85
+    },
+    "assets": [
+      {
+        "name": "Investment Portfolio",
+        "type": "portfolio",
+        "currentValue": 200000,
+        "contributionAmount": 15000,
+        "contributionFrequency": "annual",
+        "expectedReturn": 0.07,
+        "volatility": 0.15
+      }
+    ],
+    "liabilities": [],
+    "withdrawalStrategy": {
+      "type": "swr",
+      "rate": 0.04,
+      "inflationAdjusted": true
+    },
+    "projectionMethod": "deterministic"
+  }'
+```
+
+**Key Difference**: Monte Carlo accounts for market volatility and provides success probabilities, while Deterministic is faster and shows a single expected outcome without considering volatility.
+
 ## NZ Tax Considerations
 
 The function incorporates NZ tax brackets for 2024-2025:
