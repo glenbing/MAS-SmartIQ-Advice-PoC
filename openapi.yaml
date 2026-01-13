@@ -1,0 +1,528 @@
+openapi: 3.0.3
+info:
+  title: NZ Financial Projections API
+  description: |
+    Azure Function API for New Zealand financial projections using deterministic and Monte Carlo methods.
+    
+    ## Features
+    - **Deterministic projections**: Traditional linear projections based on expected returns
+    - **Monte Carlo simulations**: Probabilistic projections accounting for market volatility
+    - **NZ-specific features**: KiwiSaver modeling, NZ Work Super, NZ tax brackets and PIE tax calculations
+    - **Withdrawal strategies**: Safe Withdrawal Rate (SWR) and Systematic Withdrawal Plan (SWP)
+    - **Liability management**: Track mortgages, loans, and other liabilities with interest calculations
+    - **Income assets**: Model income streams that stop at retirement
+    - **Visualization**: Returns Vega v6 JSON charts showing net worth and asset performance
+    
+  version: 1.0.0
+  contact:
+    name: API Support
+    url: https://github.com/glenbing/MAS-SmartIQ-Advice-PoC
+
+servers:
+  - url: http://localhost:7071/api
+    description: Local development server
+  - url: https://{function-app-name}.azurewebsites.net/api
+    description: Azure Function deployment
+    variables:
+      function-app-name:
+        default: mas-smartiq-advice
+        description: Your Azure Function App name
+
+paths:
+  /nzFinancialProjections:
+    post:
+      summary: Generate financial projections
+      description: |
+        Accepts financial goals, assets, and liabilities, and returns projections with Vega v6 visualization.
+        
+        Supports both deterministic (linear) and Monte Carlo (probabilistic) projection methods.
+        
+        **Asset Types**:
+        - `kiwisaver`: KiwiSaver accounts with employer and government contributions
+        - `nz-work-super`: NZ Work Super schemes
+        - `portfolio`: Investment portfolios
+        - `property`: Real estate
+        - `income`: Income streams (salary, wages) that stop at retirement
+        - `other`: Other assets
+        
+        **Liability Types**:
+        - `mortgage`: Home loans with interest and monthly payments
+        - `loan`: Personal or business loans
+        - `credit-card`: Credit card debt
+        - `other`: Other liabilities
+        
+        **Withdrawal Strategies**:
+        - `swr`: Safe Withdrawal Rate (default 4% rule)
+        - `swp`: Systematic Withdrawal Plan with fixed amount
+        
+      operationId: calculateProjections
+      tags:
+        - Financial Projections
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectionRequest'
+            examples:
+              basicKiwiSaver:
+                summary: Basic KiwiSaver projection
+                value:
+                  currentAge: 30
+                  goals:
+                    retirementAge: 65
+                    lifeExpectancy: 85
+                  assets:
+                    - name: KiwiSaver
+                      type: kiwisaver
+                      currentValue: 30000
+                      contributionAmount: 3000
+                      contributionFrequency: annual
+                      expectedReturn: 0.06
+                      volatility: 0.12
+                      employerContribution: 3000
+                      governmentContribution: 521.43
+                  liabilities: []
+              mortgageScenario:
+                summary: Mortgage extending past retirement
+                value:
+                  currentAge: 40
+                  goals:
+                    retirementAge: 65
+                    lifeExpectancy: 85
+                  assets:
+                    - name: Retirement Portfolio
+                      type: portfolio
+                      currentValue: 300000
+                      contributionAmount: 20000
+                      contributionFrequency: annual
+                      expectedReturn: 0.07
+                      volatility: 0.15
+                  liabilities:
+                    - name: Home Mortgage
+                      type: mortgage
+                      currentBalance: 400000
+                      interestRate: 0.06
+                      monthlyPayment: 2400
+                      remainingMonths: 360
+                  withdrawalStrategy:
+                    type: swr
+                    rate: 0.04
+                    inflationAdjusted: true
+              incomeAsset:
+                summary: Income asset stopping at retirement
+                value:
+                  currentAge: 50
+                  goals:
+                    retirementAge: 65
+                    lifeExpectancy: 85
+                  assets:
+                    - name: Salary Income
+                      type: income
+                      currentValue: 80000
+                      expectedReturn: 0
+                      volatility: 0
+                    - name: Investment Portfolio
+                      type: portfolio
+                      currentValue: 200000
+                      contributionAmount: 15000
+                      contributionFrequency: annual
+                      expectedReturn: 0.07
+                      volatility: 0.15
+                  liabilities: []
+                  withdrawalStrategy:
+                    type: swr
+                    rate: 0.04
+                    inflationAdjusted: true
+              comprehensive:
+                summary: Comprehensive scenario with mortgage and income
+                value:
+                  currentAge: 45
+                  goals:
+                    retirementAge: 65
+                    lifeExpectancy: 85
+                  assets:
+                    - name: Salary
+                      type: income
+                      currentValue: 60000
+                      expectedReturn: 0
+                      volatility: 0
+                    - name: KiwiSaver
+                      type: kiwisaver
+                      currentValue: 150000
+                      contributionAmount: 6000
+                      contributionFrequency: annual
+                      expectedReturn: 0.06
+                      volatility: 0.12
+                      employerContribution: 6000
+                      governmentContribution: 521.43
+                    - name: Investment Portfolio
+                      type: portfolio
+                      currentValue: 250000
+                      contributionAmount: 10000
+                      contributionFrequency: annual
+                      expectedReturn: 0.07
+                      volatility: 0.15
+                  liabilities:
+                    - name: Mortgage
+                      type: mortgage
+                      currentBalance: 300000
+                      interestRate: 0.055
+                      monthlyPayment: 2000
+                      remainingMonths: 300
+                  withdrawalStrategy:
+                    type: swr
+                    rate: 0.04
+                    inflationAdjusted: true
+                  projectionMethod: monteCarlo
+                  numSimulations: 1000
+      responses:
+        '200':
+          description: Successful projection calculation
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/VegaSpecResponse'
+                  - $ref: '#/components/schemas/DataOnlyResponse'
+              examples:
+                fullVegaSpec:
+                  summary: Full Vega v6 specification (default)
+                  value:
+                    $schema: "https://vega.github.io/schema/vega/v6.json"
+                    description: "Financial projections showing net worth and asset performance"
+                    width: 800
+                    height: 450
+                    data:
+                      - name: source_0
+                        values:
+                          - age: 35
+                            year: 2024
+                            value: 150000
+                            category: "Net Worth"
+                            phase: "Accumulation"
+                dataOnly:
+                  summary: Data values only (responseFormat=dataOnly)
+                  value:
+                    - age: 35
+                      year: 2024
+                      value: 150000
+                      category: "Net Worth"
+                      phase: "Accumulation"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingFields:
+                  value:
+                    error: "Missing required fields. Required: currentAge, goals, assets"
+                invalidProjectionMethod:
+                  value:
+                    error: "Invalid projectionMethod. Must be one of: deterministic, monteCarlo"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ProjectionRequest:
+      type: object
+      required:
+        - currentAge
+        - goals
+        - assets
+      properties:
+        currentAge:
+          type: integer
+          minimum: 18
+          maximum: 100
+          description: Current age of the person
+          example: 35
+        goals:
+          $ref: '#/components/schemas/Goals'
+        assets:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Asset'
+        liabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Liability'
+          default: []
+        withdrawalStrategy:
+          $ref: '#/components/schemas/WithdrawalStrategy'
+        inflationRate:
+          type: number
+          minimum: 0
+          maximum: 0.2
+          default: 0.02
+          description: Annual inflation rate as decimal (e.g., 0.02 for 2%)
+          example: 0.02
+        taxYear:
+          type: integer
+          minimum: 2020
+          maximum: 2030
+          default: 2024
+          description: Tax year for NZ tax calculations
+          example: 2024
+        projectionMethod:
+          type: string
+          enum: [deterministic, monteCarlo]
+          default: monteCarlo
+          description: |
+            Projection method to use:
+            - `deterministic`: Single-path linear projection (faster)
+            - `monteCarlo`: Probabilistic projection with 1000+ simulations (default)
+        numSimulations:
+          type: integer
+          minimum: 100
+          maximum: 10000
+          default: 1000
+          description: Number of Monte Carlo simulations (only used when projectionMethod=monteCarlo)
+          example: 1000
+        responseFormat:
+          type: string
+          enum: [full, dataOnly]
+          default: full
+          description: |
+            Response format:
+            - `full`: Returns complete Vega v6 specification (default)
+            - `dataOnly`: Returns only the data values array
+
+    Goals:
+      type: object
+      required:
+        - retirementAge
+      properties:
+        name:
+          type: string
+          description: Name of the retirement goal
+          example: "Comfortable Retirement"
+        retirementAge:
+          type: integer
+          minimum: 50
+          maximum: 100
+          description: Age at retirement
+          example: 65
+        lifeExpectancy:
+          type: integer
+          minimum: 60
+          maximum: 120
+          default: 90
+          description: Expected age at death
+          example: 90
+        desiredAnnualIncome:
+          type: number
+          minimum: 0
+          description: Desired annual income in retirement (NZD)
+          example: 60000
+        inflationRate:
+          type: number
+          minimum: 0
+          maximum: 0.2
+          default: 0.02
+          description: Annual inflation rate as decimal
+          example: 0.02
+
+    Asset:
+      type: object
+      required:
+        - name
+        - type
+        - currentValue
+      properties:
+        name:
+          type: string
+          description: Name of the asset
+          example: "KiwiSaver"
+        type:
+          type: string
+          enum: [kiwisaver, nz-work-super, portfolio, property, income, other]
+          description: |
+            Type of asset:
+            - `kiwisaver`: KiwiSaver account with employer/government contributions
+            - `nz-work-super`: NZ Work Super scheme
+            - `portfolio`: Investment portfolio
+            - `property`: Real estate
+            - `income`: Income stream (salary, wages) that stops at retirement
+            - `other`: Other assets
+        currentValue:
+          type: number
+          minimum: 0
+          description: |
+            Current value in NZD.
+            For income assets, this represents the annual income amount.
+          example: 50000
+        contributionAmount:
+          type: number
+          minimum: 0
+          description: Contribution amount per period (stops at retirement except for income assets)
+          example: 4000
+        contributionFrequency:
+          type: string
+          enum: [annual, monthly, weekly]
+          default: annual
+          description: Frequency of contributions
+        expectedReturn:
+          type: number
+          minimum: -0.5
+          maximum: 1.0
+          description: |
+            Expected annual return as decimal (e.g., 0.07 for 7%).
+            For income assets, set to 0 as they don't grow.
+          example: 0.06
+        volatility:
+          type: number
+          minimum: 0
+          maximum: 1.0
+          description: |
+            Standard deviation for Monte Carlo simulations (e.g., 0.15 for 15%).
+            For income assets, set to 0.
+          example: 0.12
+        employerContribution:
+          type: number
+          minimum: 0
+          description: Annual employer contribution (KiwiSaver only)
+          example: 3000
+        governmentContribution:
+          type: number
+          minimum: 0
+          description: Annual government contribution (KiwiSaver only, max $521.43)
+          example: 521.43
+
+    Liability:
+      type: object
+      required:
+        - name
+        - type
+        - currentBalance
+        - interestRate
+        - monthlyPayment
+      properties:
+        name:
+          type: string
+          description: Name of the liability
+          example: "Home Mortgage"
+        type:
+          type: string
+          enum: [mortgage, loan, credit-card, other]
+          description: Type of liability
+        currentBalance:
+          type: number
+          minimum: 0
+          description: Current outstanding balance in NZD
+          example: 400000
+        interestRate:
+          type: number
+          minimum: 0
+          maximum: 1.0
+          description: Annual interest rate as decimal (e.g., 0.065 for 6.5%)
+          example: 0.065
+        monthlyPayment:
+          type: number
+          minimum: 0
+          description: Monthly payment amount in NZD
+          example: 2500
+        remainingMonths:
+          type: integer
+          minimum: 0
+          description: Number of months remaining (optional, for tracking purposes)
+          example: 240
+
+    WithdrawalStrategy:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [swr, swp]
+          description: |
+            Withdrawal strategy type:
+            - `swr`: Safe Withdrawal Rate (e.g., 4% rule)
+            - `swp`: Systematic Withdrawal Plan (fixed amount)
+        rate:
+          type: number
+          minimum: 0
+          maximum: 1.0
+          description: Withdrawal rate for SWR strategy (e.g., 0.04 for 4%)
+          example: 0.04
+        fixedAmount:
+          type: number
+          minimum: 0
+          description: Fixed annual withdrawal amount for SWP strategy (NZD)
+          example: 50000
+        inflationAdjusted:
+          type: boolean
+          default: true
+          description: Whether withdrawals should be adjusted for inflation
+
+    VegaSpecResponse:
+      type: object
+      description: Complete Vega v6 specification for visualization
+      required:
+        - $schema
+        - description
+        - width
+        - height
+        - data
+      properties:
+        $schema:
+          type: string
+          example: "https://vega.github.io/schema/vega/v6.json"
+        description:
+          type: string
+          example: "Financial projections showing net worth and asset performance"
+        width:
+          type: integer
+          example: 800
+        height:
+          type: integer
+          example: 450
+        data:
+          type: array
+          items:
+            type: object
+
+    DataOnlyResponse:
+      type: array
+      description: Array of projection data points (when responseFormat=dataOnly)
+      items:
+        type: object
+        properties:
+          age:
+            type: integer
+            example: 35
+          year:
+            type: integer
+            example: 2024
+          value:
+            type: number
+            example: 150000
+          category:
+            type: string
+            example: "Net Worth"
+          phase:
+            type: string
+            enum: [Accumulation, Decumulation]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        message:
+          type: string
+          description: Detailed error message
+
+tags:
+  - name: Financial Projections
+    description: Calculate financial projections for retirement planning

@@ -49,55 +49,90 @@ export function calculateDeterministicProjection(
       let value = currentAssets.get(asset.name) || 0;
       const expectedReturn = asset.expectedReturn || 0.05;
       
-      // Growth
-      value *= (1 + expectedReturn);
-      
-      // Contributions (only before retirement)
-      if (!isRetired && asset.contributionAmount) {
-        let annualContribution = asset.contributionAmount;
-        
-        if (asset.contributionFrequency === 'monthly') {
-          annualContribution *= 12;
-        } else if (asset.contributionFrequency === 'weekly') {
-          annualContribution *= 52;
+      // For income assets: they represent ongoing income (like salary/pension) that stops at retirement
+      // Income assets have a "value" that represents the annual income amount but don't accumulate
+      if (asset.type === 'income') {
+        if (!isRetired) {
+          // Before retirement, income continues at its current value
+          value = asset.currentValue;
+        } else {
+          // After retirement, income stops
+          value = 0;
         }
+      } else {
+        // Growth for non-income assets
+        value *= (1 + expectedReturn);
         
-        // Add employer and government contributions for KiwiSaver
-        if (asset.type === 'kiwisaver') {
-          if (asset.employerContribution) {
-            annualContribution += asset.employerContribution;
+        // Contributions (only before retirement)
+        if (!isRetired && asset.contributionAmount) {
+          let annualContribution = asset.contributionAmount;
+          
+          if (asset.contributionFrequency === 'monthly') {
+            annualContribution *= 12;
+          } else if (asset.contributionFrequency === 'weekly') {
+            annualContribution *= 52;
           }
-          if (asset.governmentContribution) {
-            annualContribution += asset.governmentContribution;
+          
+          // Add employer and government contributions for KiwiSaver
+          if (asset.type === 'kiwisaver') {
+            if (asset.employerContribution) {
+              annualContribution += asset.employerContribution;
+            }
+            if (asset.governmentContribution) {
+              annualContribution += asset.governmentContribution;
+            }
           }
+          
+          value += annualContribution;
         }
-        
-        value += annualContribution;
       }
       
       newAssets.set(asset.name, value);
       totalAssetValue += value;
     });
     
-    // Calculate liability payments
+    // Calculate liability payments and deduct from assets
     const newLiabilities = new Map<string, number>();
     let totalLiabilityValue = 0;
+    let totalLiabilityPayments = 0;
     
     liabilities.forEach(liability => {
       let balance = currentLiabilities.get(liability.name) || 0;
       
       if (balance > 0) {
+        // Calculate annual payment
+        const annualPayment = liability.monthlyPayment * 12;
+        totalLiabilityPayments += annualPayment;
+        
         // Interest accrual
         balance *= (1 + liability.interestRate);
         
-        // Payments
-        const annualPayment = liability.monthlyPayment * 12;
+        // Payments reduce the balance
         balance = Math.max(0, balance - annualPayment);
       }
       
       newLiabilities.set(liability.name, balance);
       totalLiabilityValue += balance;
     });
+    
+    // Deduct liability payments from assets proportionally
+    // This represents the cash outflow to service liabilities
+    if (totalLiabilityPayments > 0 && totalAssetValue > 0) {
+      assets.forEach(asset => {
+        // Income assets contribute to paying liabilities but don't get depleted themselves
+        if (asset.type === 'income') {
+          return; // Skip income assets for payment deduction
+        }
+        
+        const assetValue = newAssets.get(asset.name) || 0;
+        const proportion = assetValue / totalAssetValue;
+        const assetPayment = totalLiabilityPayments * proportion;
+        newAssets.set(asset.name, Math.max(0, assetValue - assetPayment));
+      });
+      
+      // Recalculate total after liability payments
+      totalAssetValue = Array.from(newAssets.values()).reduce((sum, val) => sum + val, 0);
+    }
     
     // Calculate withdrawal if retired
     let withdrawalAmount = 0;

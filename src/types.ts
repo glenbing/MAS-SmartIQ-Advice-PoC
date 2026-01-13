@@ -4,7 +4,7 @@
 
 export interface Asset {
   name: string;
-  type: 'kiwisaver' | 'nz-work-super' | 'portfolio' | 'property' | 'other';
+  type: 'kiwisaver' | 'nz-work-super' | 'portfolio' | 'property' | 'income' | 'other';
   currentValue: number;
   contributionAmount?: number;
   contributionFrequency?: 'annual' | 'monthly' | 'weekly';

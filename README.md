@@ -44,6 +44,8 @@ This Azure Function provides comprehensive financial projections for New Zealand
 
 RESTful endpoint that accepts financial goals, assets, and liabilities, returning projections with Vega-Lite visualization.
 
+**API Documentation**: See [openapi.yaml](./openapi.yaml) for complete OpenAPI 3.0 specification with detailed schemas, examples, and request/response formats.
+
 #### Request Body
 
 ```json
@@ -105,6 +107,7 @@ RESTful endpoint that accepts financial goals, assets, and liabilities, returnin
 - `nz-work-super`: NZ Work Super schemes
 - `portfolio`: Investment portfolios
 - `property`: Real estate
+- `income`: Income streams (e.g., salary, wages) that stop at retirement
 - `other`: Other assets
 
 #### Withdrawal Strategy Types
@@ -457,6 +460,196 @@ curl -X POST http://localhost:7071/api/nzFinancialProjections \
 ```
 
 **Key Difference**: Monte Carlo accounts for market volatility and provides success probabilities, while Deterministic is faster and shows a single expected outcome without considering volatility.
+
+### Example 7: Mortgage Extending Past Retirement
+
+This example demonstrates how liabilities (like a mortgage) continue to be serviced after retirement, reducing net wealth during the decumulation phase.
+
+```bash
+curl -X POST http://localhost:7071/api/nzFinancialProjections \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentAge": 40,
+    "goals": {
+      "retirementAge": 65,
+      "lifeExpectancy": 85
+    },
+    "assets": [
+      {
+        "name": "Retirement Portfolio",
+        "type": "portfolio",
+        "currentValue": 300000,
+        "contributionAmount": 20000,
+        "contributionFrequency": "annual",
+        "expectedReturn": 0.07,
+        "volatility": 0.15
+      }
+    ],
+    "liabilities": [
+      {
+        "name": "Home Mortgage",
+        "type": "mortgage",
+        "currentBalance": 400000,
+        "interestRate": 0.06,
+        "monthlyPayment": 2400,
+        "remainingMonths": 360
+      }
+    ],
+    "withdrawalStrategy": {
+      "type": "swr",
+      "rate": 0.04,
+      "inflationAdjusted": true
+    },
+    "projectionMethod": "deterministic"
+  }'
+```
+
+**Key Points**:
+- The mortgage requires ~$28,800/year in payments ($2,400 × 12)
+- These payments continue after retirement, reducing available assets
+- The projection shows both the regular retirement withdrawals AND the mortgage servicing costs
+- Net worth = Total Assets - Outstanding Liabilities
+
+### Example 8: Income Asset Stopping at Retirement
+
+This example shows how income streams (like salary or wages) can be modeled as assets that contribute to wealth accumulation but stop at retirement.
+
+```bash
+curl -X POST http://localhost:7071/api/nzFinancialProjections \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentAge": 50,
+    "goals": {
+      "retirementAge": 65,
+      "lifeExpectancy": 85
+    },
+    "assets": [
+      {
+        "name": "Salary Income",
+        "type": "income",
+        "currentValue": 80000,
+        "expectedReturn": 0,
+        "volatility": 0
+      },
+      {
+        "name": "Investment Portfolio",
+        "type": "portfolio",
+        "currentValue": 200000,
+        "contributionAmount": 15000,
+        "contributionFrequency": "annual",
+        "expectedReturn": 0.07,
+        "volatility": 0.15
+      }
+    ],
+    "liabilities": [],
+    "withdrawalStrategy": {
+      "type": "swr",
+      "rate": 0.04,
+      "inflationAdjusted": true
+    },
+    "projectionMethod": "deterministic"
+  }'
+```
+
+**Key Points**:
+- The `income` asset type represents annual income (e.g., salary, wages)
+- Income assets don't grow or accumulate - they represent a flow of money
+- Income stops completely at retirement age
+- This is useful for modeling employment income that won't continue in retirement
+
+### Example 9: Combined Mortgage and Income Scenario
+
+This comprehensive example combines both features: a mortgage extending past retirement and income that stops at retirement.
+
+```bash
+curl -X POST http://localhost:7071/api/nzFinancialProjections \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentAge": 45,
+    "goals": {
+      "retirementAge": 65,
+      "lifeExpectancy": 85
+    },
+    "assets": [
+      {
+        "name": "Salary",
+        "type": "income",
+        "currentValue": 60000,
+        "expectedReturn": 0,
+        "volatility": 0
+      },
+      {
+        "name": "KiwiSaver",
+        "type": "kiwisaver",
+        "currentValue": 150000,
+        "contributionAmount": 6000,
+        "contributionFrequency": "annual",
+        "expectedReturn": 0.06,
+        "volatility": 0.12,
+        "employerContribution": 6000,
+        "governmentContribution": 521.43
+      },
+      {
+        "name": "Investment Portfolio",
+        "type": "portfolio",
+        "currentValue": 250000,
+        "contributionAmount": 10000,
+        "contributionFrequency": "annual",
+        "expectedReturn": 0.07,
+        "volatility": 0.15
+      }
+    ],
+    "liabilities": [
+      {
+        "name": "Mortgage",
+        "type": "mortgage",
+        "currentBalance": 300000,
+        "interestRate": 0.055,
+        "monthlyPayment": 2000,
+        "remainingMonths": 300
+      }
+    ],
+    "withdrawalStrategy": {
+      "type": "swr",
+      "rate": 0.04,
+      "inflationAdjusted": true
+    },
+    "projectionMethod": "monteCarlo",
+    "numSimulations": 1000
+  }'
+```
+
+**Key Points**:
+- Salary of $60,000/year provides income until retirement
+- KiwiSaver and investment portfolio continue to grow with contributions
+- Mortgage payments of $24,000/year ($2,000 × 12) continue until paid off
+- After retirement:
+  - Salary stops (income asset goes to $0)
+  - Mortgage payments continue from accumulated assets
+  - Standard 4% SWR withdrawals begin
+  - Net wealth accounts for both withdrawal needs and liability servicing
+- This scenario models a realistic retirement where not all debts are paid before retirement
+
+### Understanding Liability Impact on Retirement
+
+**How Liabilities Affect Projections**:
+
+1. **During Accumulation (Before Retirement)**:
+   - Liability payments are deducted from assets each year
+   - Assets grow through contributions and returns
+   - Net Worth = Total Assets - Outstanding Liabilities
+
+2. **During Decumulation (After Retirement)**:
+   - Retirement withdrawals are taken from assets
+   - Liability payments ALSO reduce assets
+   - Total cash need = Retirement Income + Liability Payments
+   - Assets must support both living expenses and debt servicing
+
+3. **Sustainability Considerations**:
+   - Carrying liabilities into retirement increases withdrawal needs
+   - Success rates may be lower with unpaid mortgages
+   - Consider paying off high-interest debt before retirement
+   - Factor in liability payments when calculating safe withdrawal rates
 
 ## NZ Tax Considerations
 
