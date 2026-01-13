@@ -630,6 +630,8 @@ curl -X POST http://localhost:7071/api/nzFinancialProjections \
   - Net wealth accounts for both withdrawal needs and liability servicing
 - This scenario models a realistic retirement where not all debts are paid before retirement
 
+**Complete JSON Example**: See [example-income-mortgage.json](./example-income-mortgage.json) for a complete request with both income assets and liabilities.
+
 ### Understanding Liability Impact on Retirement
 
 **How Liabilities Affect Projections**:
