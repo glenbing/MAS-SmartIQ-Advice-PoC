@@ -1,0 +1,71 @@
+{
+  "description": "Example request demonstrating income assets and mortgage extending past retirement",
+  "currentAge": 45,
+  "goals": {
+    "name": "Retirement Planning with Income and Mortgage",
+    "retirementAge": 65,
+    "lifeExpectancy": 85,
+    "desiredAnnualIncome": 60000,
+    "inflationRate": 0.02
+  },
+  "assets": [
+    {
+      "name": "Salary Income",
+      "type": "income",
+      "currentValue": 60000,
+      "expectedReturn": 0,
+      "volatility": 0,
+      "comments": "Annual salary that stops at retirement"
+    },
+    {
+      "name": "KiwiSaver",
+      "type": "kiwisaver",
+      "currentValue": 150000,
+      "contributionAmount": 6000,
+      "contributionFrequency": "annual",
+      "expectedReturn": 0.06,
+      "volatility": 0.12,
+      "employerContribution": 6000,
+      "governmentContribution": 521.43,
+      "comments": "KiwiSaver with employer and government contributions"
+    },
+    {
+      "name": "Investment Portfolio",
+      "type": "portfolio",
+      "currentValue": 250000,
+      "contributionAmount": 10000,
+      "contributionFrequency": "annual",
+      "expectedReturn": 0.07,
+      "volatility": 0.15,
+      "comments": "Personal investment portfolio"
+    }
+  ],
+  "liabilities": [
+    {
+      "name": "Home Mortgage",
+      "type": "mortgage",
+      "currentBalance": 300000,
+      "interestRate": 0.055,
+      "monthlyPayment": 2000,
+      "remainingMonths": 300,
+      "comments": "25-year mortgage that extends 5 years past retirement"
+    }
+  ],
+  "withdrawalStrategy": {
+    "type": "swr",
+    "rate": 0.04,
+    "inflationAdjusted": true
+  },
+  "inflationRate": 0.02,
+  "taxYear": 2024,
+  "numSimulations": 1000,
+  "projectionMethod": "monteCarlo",
+  "comments": [
+    "This example demonstrates:",
+    "1. Income asset (salary) that stops at retirement age 65",
+    "2. Mortgage with payments continuing 5 years past retirement",
+    "3. KiwiSaver and investment portfolio for retirement savings",
+    "4. Safe Withdrawal Rate strategy with 4% rule",
+    "5. Monte Carlo simulation with 1000 runs for probabilistic outcomes"
+  ]
+}
