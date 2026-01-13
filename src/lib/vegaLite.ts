@@ -6,6 +6,17 @@
 
 import { ProjectionPoint } from '../types.js';
 
+// Interface for chart data points
+interface ChartDataPoint {
+  age: number;
+  year: number;
+  value: number;
+  category: string;
+  phase: 'Accumulation' | 'Decumulation';
+  withdrawalAmount?: number;
+  sustainabilityRatio?: number | null;
+}
+
 // Cache for vega-lite module to avoid repeated dynamic imports
 let vegaLiteModule: any = null;
 
@@ -43,7 +54,7 @@ export async function generateVegaLiteSpec(
   // Get vega-lite module
   const vegaLite = await getVegaLite();
   // Prepare data for net worth projection
-  const netWorthData = projections.map(point => ({
+  const netWorthData: ChartDataPoint[] = projections.map(point => ({
     age: point.age,
     year: point.year,
     value: point.netWorth,
@@ -54,37 +65,28 @@ export async function generateVegaLiteSpec(
   }));
   
   // Prepare data for individual assets
-  const assetData: any[] = [];
+  const assetData: ChartDataPoint[] = projections.flatMap(point =>
+    Object.entries(point.assets).map(([assetName, value]) => ({
+      age: point.age,
+      year: point.year,
+      value: value,
+      category: assetName,
+      phase: point.age < retirementAge ? 'Accumulation' : 'Decumulation'
+    }))
+  );
   
-  projections.forEach(point => {
-    Object.entries(point.assets).forEach(([assetName, value]) => {
-      assetData.push({
+  // Prepare data for individual liabilities
+  const liabilityData: ChartDataPoint[] = projections.flatMap(point =>
+    Object.entries(point.liabilities)
+      .filter(([_, value]) => value > 0) // Only include non-zero liabilities
+      .map(([liabilityName, value]) => ({
         age: point.age,
         year: point.year,
         value: value,
-        category: assetName,
+        category: `${liabilityName} (Liability)`,
         phase: point.age < retirementAge ? 'Accumulation' : 'Decumulation'
-      });
-    });
-  });
-  
-  // Prepare data for individual liabilities
-  const liabilityData: any[] = [];
-  
-  projections.forEach(point => {
-    Object.entries(point.liabilities).forEach(([liabilityName, value]) => {
-      // Only add liability data points if the liability has a non-zero balance
-      if (value > 0) {
-        liabilityData.push({
-          age: point.age,
-          year: point.year,
-          value: value,
-          category: `${liabilityName} (Liability)`,
-          phase: point.age < retirementAge ? 'Accumulation' : 'Decumulation'
-        });
-      }
-    });
-  });
+      }))
+  );
   
   // Combine all data
   const allData = [...netWorthData, ...assetData, ...liabilityData];
