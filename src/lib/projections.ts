@@ -128,9 +128,9 @@ export function calculateDeterministicProjection(
       
       if (totalNonIncomeAssets > 0) {
         assets.forEach(asset => {
-          // Income assets contribute to paying liabilities but don't get depleted themselves
+          // Skip income assets - they represent cash flow, not stored wealth that can be depleted
           if (asset.type === 'income') {
-            return; // Skip income assets for payment deduction
+            return;
           }
           
           const assetValue = newAssets.get(asset.name) || 0;
@@ -190,7 +190,7 @@ export function calculateDeterministicProjection(
         
         if (totalNonIncomeAssets > 0) {
           assets.forEach(asset => {
-            // Income assets should already be 0 after retirement, skip them
+            // Skip income assets - they are set to 0 at retirement and represent flow not stock
             if (asset.type === 'income') {
               return;
             }

@@ -19,7 +19,6 @@ const test1Input = {
   currentAge: 40,
   goals: {
     name: 'Retirement with Mortgage',
-    targetAge: 40,
     retirementAge: 65,
     lifeExpectancy: 85,
     inflationRate: 0.02
@@ -98,7 +97,6 @@ const test2Input = {
   currentAge: 50,
   goals: {
     name: 'Income Asset Test',
-    targetAge: 50,
     retirementAge: 65,
     lifeExpectancy: 85,
     inflationRate: 0.02
@@ -174,7 +172,6 @@ const test3Input = {
   currentAge: 45,
   goals: {
     name: 'Combined Test',
-    targetAge: 45,
     retirementAge: 65,
     lifeExpectancy: 85,
     inflationRate: 0.02
