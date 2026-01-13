@@ -118,20 +118,30 @@ export function calculateDeterministicProjection(
     // Deduct liability payments from assets proportionally
     // This represents the cash outflow to service liabilities
     if (totalLiabilityPayments > 0 && totalAssetValue > 0) {
+      // Calculate total non-income assets for proper proportional calculation
+      let totalNonIncomeAssets = 0;
       assets.forEach(asset => {
-        // Income assets contribute to paying liabilities but don't get depleted themselves
-        if (asset.type === 'income') {
-          return; // Skip income assets for payment deduction
+        if (asset.type !== 'income') {
+          totalNonIncomeAssets += newAssets.get(asset.name) || 0;
         }
-        
-        const assetValue = newAssets.get(asset.name) || 0;
-        const proportion = assetValue / totalAssetValue;
-        const assetPayment = totalLiabilityPayments * proportion;
-        newAssets.set(asset.name, Math.max(0, assetValue - assetPayment));
       });
       
-      // Recalculate total after liability payments
-      totalAssetValue = Array.from(newAssets.values()).reduce((sum, val) => sum + val, 0);
+      if (totalNonIncomeAssets > 0) {
+        assets.forEach(asset => {
+          // Income assets contribute to paying liabilities but don't get depleted themselves
+          if (asset.type === 'income') {
+            return; // Skip income assets for payment deduction
+          }
+          
+          const assetValue = newAssets.get(asset.name) || 0;
+          const proportion = assetValue / totalNonIncomeAssets;
+          const assetPayment = totalLiabilityPayments * proportion;
+          newAssets.set(asset.name, Math.max(0, assetValue - assetPayment));
+        });
+        
+        // Recalculate total after liability payments
+        totalAssetValue = Array.from(newAssets.values()).reduce((sum, val) => sum + val, 0);
+      }
     }
     
     // Calculate withdrawal if retired
@@ -168,17 +178,34 @@ export function calculateDeterministicProjection(
           : withdrawalStrategy.fixedAmount;
       }
       
-      // Apply withdrawal proportionally across assets
+      // Apply withdrawal proportionally across non-income assets
       if (withdrawalAmount > 0 && totalAssetValue > 0) {
+        // Calculate total non-income assets for proper proportional calculation
+        let totalNonIncomeAssets = 0;
         assets.forEach(asset => {
-          const assetValue = newAssets.get(asset.name) || 0;
-          const proportion = assetValue / totalAssetValue;
-          const assetWithdrawal = withdrawalAmount * proportion;
-          newAssets.set(asset.name, Math.max(0, assetValue - assetWithdrawal));
+          if (asset.type !== 'income') {
+            totalNonIncomeAssets += newAssets.get(asset.name) || 0;
+          }
         });
         
-        // Recalculate total after withdrawal
-        totalAssetValue = Array.from(newAssets.values()).reduce((sum, val) => sum + val, 0);
+        if (totalNonIncomeAssets > 0) {
+          assets.forEach(asset => {
+            // Income assets should already be 0 after retirement, skip them
+            if (asset.type === 'income') {
+              return;
+            }
+            
+            const assetValue = newAssets.get(asset.name) || 0;
+            if (assetValue > 0) {
+              const proportion = assetValue / totalNonIncomeAssets;
+              const assetWithdrawal = withdrawalAmount * proportion;
+              newAssets.set(asset.name, Math.max(0, assetValue - assetWithdrawal));
+            }
+          });
+          
+          // Recalculate total after withdrawal
+          totalAssetValue = Array.from(newAssets.values()).reduce((sum, val) => sum + val, 0);
+        }
       }
     }
     
