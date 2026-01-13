@@ -6,6 +6,17 @@
 
 import { ProjectionPoint } from '../types.js';
 
+// Interface for chart data points
+interface ChartDataPoint {
+  age: number;
+  year: number;
+  value: number;
+  category: string;
+  phase: 'Accumulation' | 'Decumulation';
+  withdrawalAmount?: number;
+  sustainabilityRatio?: number | null;
+}
+
 // Cache for vega-lite module to avoid repeated dynamic imports
 let vegaLiteModule: any = null;
 
@@ -43,7 +54,7 @@ export async function generateVegaLiteSpec(
   // Get vega-lite module
   const vegaLite = await getVegaLite();
   // Prepare data for net worth projection
-  const netWorthData = projections.map(point => ({
+  const netWorthData: ChartDataPoint[] = projections.map(point => ({
     age: point.age,
     year: point.year,
     value: point.netWorth,
@@ -54,29 +65,38 @@ export async function generateVegaLiteSpec(
   }));
   
   // Prepare data for individual assets
-  const assetData: any[] = [];
+  const assetData: ChartDataPoint[] = projections.flatMap(point =>
+    Object.entries(point.assets).map(([assetName, value]) => ({
+      age: point.age,
+      year: point.year,
+      value: value,
+      category: assetName,
+      phase: point.age < retirementAge ? 'Accumulation' : 'Decumulation'
+    }))
+  );
   
-  projections.forEach(point => {
-    Object.entries(point.assets).forEach(([assetName, value]) => {
-      assetData.push({
+  // Prepare data for individual liabilities
+  const liabilityData: ChartDataPoint[] = projections.flatMap(point =>
+    Object.entries(point.liabilities)
+      .filter(([_, value]) => value > 0) // Only include non-zero liabilities
+      .map(([liabilityName, value]) => ({
         age: point.age,
         year: point.year,
         value: value,
-        category: assetName,
+        category: `${liabilityName} (Liability)`,
         phase: point.age < retirementAge ? 'Accumulation' : 'Decumulation'
-      });
-    });
-  });
+      }))
+  );
   
   // Combine all data
-  const allData = [...netWorthData, ...assetData];
+  const allData = [...netWorthData, ...assetData, ...liabilityData];
   
   // Create Vega-Lite specification
   const spec = {
     $schema: 'https://vega.github.io/schema/vega-lite/v6.json',
     title: {
-      text: 'NZ Financial Projections - Net Worth and Asset Performance',
-      subtitle: 'Showing accumulation and decumulation phases'
+      text: 'NZ Financial Projections - Assets, Liabilities, and Net Worth',
+      subtitle: 'Showing accumulation and decumulation phases with individual asset and liability tracking'
     },
     width: 800,
     height: 450,
@@ -123,13 +143,13 @@ export async function generateVegaLiteSpec(
           color: {
             field: 'category',
             type: 'nominal',
-            title: 'Asset / Category',
+            title: 'Category',
             scale: {
               scheme: 'category20'
             },
             legend: {
               orient: 'right',
-              title: 'Assets & Net Worth'
+              title: 'Assets, Liabilities & Net Worth'
             }
           },
           strokeWidth: {
@@ -190,7 +210,7 @@ export async function generateVegaLiteSpec(
   const vegaSpec = compiled.spec;
   
   // Add description field as required for valid Vega spec
-  vegaSpec.description = 'Financial projections showing net worth and asset performance over time, including accumulation and decumulation phases for retirement planning.';
+  vegaSpec.description = 'Financial projections showing net worth, individual asset performance, and liabilities over time, including accumulation and decumulation phases for retirement planning.';
   
   return vegaSpec;
 }
