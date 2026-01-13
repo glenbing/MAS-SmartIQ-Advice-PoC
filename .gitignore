@@ -33,3 +33,9 @@ Thumbs.db
 # Generated files
 example-response.json
 test-output-*.json
+demo-output-chart.json
+visualize-chart.py
+demo-chart-test.mjs
+demo-chart-viewer.html
+test-chart-with-liabilities.mjs
+test-income-fixed-value.mjs

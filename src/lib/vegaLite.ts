@@ -68,15 +68,33 @@ export async function generateVegaLiteSpec(
     });
   });
   
+  // Prepare data for individual liabilities
+  const liabilityData: any[] = [];
+  
+  projections.forEach(point => {
+    Object.entries(point.liabilities).forEach(([liabilityName, value]) => {
+      // Only add liability data points if the liability has a non-zero balance
+      if (value > 0) {
+        liabilityData.push({
+          age: point.age,
+          year: point.year,
+          value: value,
+          category: `${liabilityName} (Liability)`,
+          phase: point.age < retirementAge ? 'Accumulation' : 'Decumulation'
+        });
+      }
+    });
+  });
+  
   // Combine all data
-  const allData = [...netWorthData, ...assetData];
+  const allData = [...netWorthData, ...assetData, ...liabilityData];
   
   // Create Vega-Lite specification
   const spec = {
     $schema: 'https://vega.github.io/schema/vega-lite/v6.json',
     title: {
-      text: 'NZ Financial Projections - Net Worth and Asset Performance',
-      subtitle: 'Showing accumulation and decumulation phases'
+      text: 'NZ Financial Projections - Assets, Liabilities, and Net Worth',
+      subtitle: 'Showing accumulation and decumulation phases with individual asset and liability tracking'
     },
     width: 800,
     height: 450,
@@ -123,13 +141,13 @@ export async function generateVegaLiteSpec(
           color: {
             field: 'category',
             type: 'nominal',
-            title: 'Asset / Category',
+            title: 'Category',
             scale: {
               scheme: 'category20'
             },
             legend: {
               orient: 'right',
-              title: 'Assets & Net Worth'
+              title: 'Assets, Liabilities & Net Worth'
             }
           },
           strokeWidth: {
@@ -190,7 +208,7 @@ export async function generateVegaLiteSpec(
   const vegaSpec = compiled.spec;
   
   // Add description field as required for valid Vega spec
-  vegaSpec.description = 'Financial projections showing net worth and asset performance over time, including accumulation and decumulation phases for retirement planning.';
+  vegaSpec.description = 'Financial projections showing net worth, individual asset performance, and liabilities over time, including accumulation and decumulation phases for retirement planning.';
   
   return vegaSpec;
 }
